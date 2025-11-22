@@ -1,0 +1,179 @@
+<div class="instructors-page">
+  
+  <!-- Page Header with Welcome and Action Buttons -->
+  <div class="page-header mb-4">
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+      <div>
+        <h4 class="mb-0 fw-bold">إدارة المعلمين👨‍🏫</h4>
+        <p class="text-muted mb-0 mt-1" style="font-size: 0.875rem;">إدارة جميع المعلمين والمدربين</p>
+      </div>
+      <div class="d-flex gap-2">
+        <button class="btn btn-primary" (click)="openAddInstructorModal()" [disabled]="isLoading">
+
+          إضافة معلم
+           <i class="bi bi-plus-lg me-2"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+  <!-- Loading Spinner -->
+  <div *ngIf="isLoading" class="text-center py-5">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">جاري التحميل...</span>
+    </div>
+    <p class="mt-3 text-muted">جاري تحميل البيانات...</p>
+  </div>
+
+  <!-- Shared Table Component -->
+  <app-table
+    *ngIf="!isLoading"
+    [data]="instructors"
+    [columns]="tableColumns"
+    [actions]="tableActions"
+    [title]="'قائمة المعلمين'"
+    [searchPlaceholder]="'بحث عن معلم...'"
+    [showSearch]="true"
+    [showFilter]="true"
+    [showCheckboxes]="true"
+    [itemsPerPage]="itemsPerPage"
+    [currentPage]="currentPage"
+    [totalItems]="instructors.length"
+    (rowClick)="onRowClick($event)"
+    (searchChange)="onSearch($event)"
+    (pageChange)="onPageChange($event)"
+    (selectionChange)="onSelectionChange($event)"
+    (sortChange)="onSortChange($event)">
+  </app-table>
+
+  <!-- Add/Edit Instructor Modal -->
+  <div class="modal fade" [class.show]="showAddInstructorModal" [style.display]="showAddInstructorModal ? 'block' : 'none'" tabindex="-1">
+    <div class="modal-backdrop fade" [class.show]="showAddInstructorModal" (click)="closeAddInstructorModal()"></div>
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <div class="modal-content">
+        
+        <!-- Modal Header -->
+        <div class="modal-header border-0 pb-0">
+          <button type="button" class="btn-close" (click)="closeAddInstructorModal()" [disabled]="isLoading"></button>
+          <h5 class="modal-title fw-bold">{{ isEditMode ? 'تعديل المعلم' : 'إضافة معلم جديد' }}</h5>
+        </div>
+
+        <!-- Modal Body -->
+        <div class="modal-body pt-3">
+          <form>
+            <!-- First Name and Last Name -->
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label class="form-label">الاسم الأول <span class="text-danger">*</span></label>
+                <input 
+                  type="text" 
+                  class="form-control" 
+                  [(ngModel)]="instructorForm.firstName"
+                  name="firstName"
+                  [disabled]="isLoading"
+                  placeholder="مثال: أحمد">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">اسم العائلة <span class="text-danger">*</span></label>
+                <input 
+                  type="text" 
+                  class="form-control" 
+                  [(ngModel)]="instructorForm.lastName"
+                  name="lastName"
+                  [disabled]="isLoading"
+                  placeholder="مثال: محمد">
+              </div>
+            </div>
+
+            <!-- Phone Number and Gender -->
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label class="form-label">رقم الهاتف <span class="text-danger">*</span></label>
+                <input 
+                  type="tel" 
+                  class="form-control" 
+                  [(ngModel)]="instructorForm.phoneNumber"
+                  name="phoneNumber"
+                  [disabled]="isLoading"
+                  placeholder="01xxxxxxxxx">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">النوع <span class="text-danger">*</span></label>
+                <select 
+                  class="form-select dropdown-select-rtl" 
+                  [(ngModel)]="instructorForm.gender"
+                  name="gender"
+                  [disabled]="isLoading">
+                  <option value="M">ذكر</option>
+                  <option value="F">أنثى</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Email and Password (Only for new instructors) -->
+            <div class="row mb-3" *ngIf="!isEditMode">
+              <div class="col-md-6">
+                <label class="form-label">البريد الإلكتروني <span class="text-danger">*</span></label>
+                <input 
+                  type="email" 
+                  class="form-control" 
+                  [(ngModel)]="instructorForm.email"
+                  name="email"
+                  [disabled]="isLoading"
+                  placeholder="example@email.com">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">كلمة المرور <span class="text-danger">*</span></label>
+                <input 
+                  type="password" 
+                  class="form-control" 
+                  [(ngModel)]="instructorForm.password"
+                  name="password"
+                  [disabled]="isLoading"
+                  placeholder="••••••••">
+              </div>
+            </div>
+
+            <!-- Title (Optional) -->
+            <div class="mb-3">
+              <label class="form-label">اللقب العلمي</label>
+              <input 
+                type="text" 
+                class="form-control" 
+                [(ngModel)]="instructorForm.title"
+                name="title"
+                [disabled]="isLoading"
+                placeholder="مثال: دكتور، مهندس، أستاذ">
+            </div>
+
+            <!-- Description -->
+            <div class="mb-3">
+              <label class="form-label">وصف المعلم <span class="text-danger">*</span></label>
+              <textarea 
+                class="form-control" 
+                [(ngModel)]="instructorForm.description"
+                name="description"
+                [disabled]="isLoading"
+                rows="4"
+                placeholder="اكتب نبذة مختصرة عن المعلم، خبراته، ومؤهلاته..."></textarea>
+              <div class="form-text">وصف موجز عن المعلم وخبراته ومؤهلاته العلمية</div>
+            </div>
+          </form>
+        </div>
+
+        <!-- Modal Footer -->
+        <div class="modal-footer border-0 pt-0">
+          <button type="button" class="btn btn-outline-secondary" (click)="closeAddInstructorModal()" [disabled]="isLoading">
+            إلغاء
+          </button>
+          <button type="button" class="btn btn-primary" (click)="addInstructor()" [disabled]="isLoading">
+            <span *ngIf="isLoading" class="spinner-border spinner-border-sm me-2" role="status"></span>
+            <i *ngIf="!isLoading" class="bi bi-{{ isEditMode ? 'check-lg' : 'plus-lg' }} me-2"></i>
+            {{ isEditMode ? 'حفظ التعديلات' : 'إضافة المعلم' }}
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+</div>

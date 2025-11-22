@@ -1,0 +1,83 @@
+<div class="login-wrapper">
+  <div class="login-container">
+    <div class="login-box">
+      <!-- Header -->
+      <div class="login-header">
+        <h1 class="login-title">أهلا بعودتك</h1>
+      </div>
+
+      <!-- Form -->
+      <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="login-form">
+        <!-- Error Message -->
+        <div *ngIf="errorMessage" class="error-message">
+          {{ errorMessage }}
+        </div>
+
+        <!-- Email Field -->
+        <div class="form-field">
+          <label for="email" class="field-label">البريد الإلكتروني</label>
+          <input 
+            type="email" 
+            id="email"
+            class="field-input" 
+            formControlName="email"
+            placeholder="أدخل بريدك الإلكتروني"
+            [class.error]="email?.invalid && email?.touched">
+          <div *ngIf="email?.invalid && email?.touched" class="field-error">
+            <span *ngIf="email?.errors?.['required']">البريد الإلكتروني مطلوب</span>
+            <span *ngIf="email?.errors?.['email']">البريد الإلكتروني غير صحيح</span>
+          </div>
+        </div>
+
+        <!-- Password Field -->
+        <div class="form-field">
+          <label for="password" class="field-label">كلمة المرور</label>
+          <div class="password-wrapper">
+            <input 
+              [type]="showPassword ? 'text' : 'password'" 
+              id="password"
+              class="field-input" 
+              formControlName="password"
+              placeholder="أدخل كلمة المرور"
+              [class.error]="password?.invalid && password?.touched">
+            <button 
+              type="button" 
+              class="toggle-password-btn"
+              (click)="togglePasswordVisibility()">
+              <i [class]="showPassword ? 'bi bi-eye-slash' : 'bi bi-eye'"></i>
+            </button>
+          </div>
+          <div *ngIf="password?.invalid && password?.touched" class="field-error">
+            <span *ngIf="password?.errors?.['required']">كلمة المرور مطلوبة</span>
+            <span *ngIf="password?.errors?.['minlength']">كلمة المرور يجب أن تكون 6 أحرف على الأقل</span>
+          </div>
+        </div>
+
+        <!-- Remember Me -->
+        <!-- <div class="remember-section">
+          <label class="remember-checkbox">
+            <input type="checkbox" formControlName="rememberMe">
+            <span>تذكرني</span>
+          </label>
+        </div> -->
+
+        <!-- Submit Button -->
+        <button 
+          type="submit" 
+          class="submit-btn"
+          [disabled]="loading">
+          <span *ngIf="!loading">تسجيل الدخول</span>
+          <span *ngIf="loading" class="loading-spinner">
+            <i class="bi bi-arrow-clockwise spin"></i>
+            جاري تسجيل الدخول...
+          </span>
+        </button>
+      </form>
+
+      <!-- Footer Links -->
+      <!-- <div class="login-footer">
+        <a href="#" class="footer-link">نسيت كلمة المرور؟</a>
+      </div> -->
+    </div>
+  </div>
+</div>

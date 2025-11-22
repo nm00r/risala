@@ -1,0 +1,44 @@
+.tests-page {
+  padding: 1.5rem;
+  
+  .page-header {
+    h4 {
+      color: #1a202c;
+      font-size: 1.5rem;
+    }
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    padding: 0.625rem 1.25rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 16px rgba(102, 126, 234, 0.3);
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .tests-page {
+    padding: 1rem;
+    
+    .page-header {
+      h4 {
+        font-size: 1.25rem;
+      }
+      
+      .d-flex {
+        flex-direction: column;
+        align-items: stretch !important;
+        
+        .btn {
+          width: 100%;
+        }
+      }
+    }
+  }
+}

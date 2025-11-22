@@ -1,0 +1,37 @@
+<div class="tests-page">
+  
+  <!-- Page Header -->
+  <div class="page-header mb-4">
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+      <div>
+        <h4 class="mb-0 fw-bold">قائمة الاختبارات</h4>
+      </div>
+      <div class="d-flex gap-2">
+        <button class="btn btn-primary" (click)="createNewTest()">
+          <i class="bi bi-plus-lg me-2"></i>
+          إضافة اختبار
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tests Table -->
+  <app-table
+    [data]="tests"
+    [columns]="testsTableColumns"
+    [actions]="testsTableActions"
+    [searchPlaceholder]="'بحث...'"
+    [showSearch]="true"
+    [showFilter]="true"
+    [showCheckboxes]="false"
+    [itemsPerPage]="itemsPerPage"
+    [currentPage]="currentPage"
+    [totalItems]="tests.length"
+    (rowClick)="onRowClick($event)"
+    (searchChange)="onSearch($event)"
+    (pageChange)="onPageChange($event)"
+    (selectionChange)="onSelectionChange($event)"
+    (sortChange)="onSortChange($event)">
+  </app-table>
+
+</div>

@@ -1,0 +1,31 @@
+<aside class="sidebar" [class.closed]="!isOpen">
+  <!-- Main Menu -->
+  <nav class="nav flex-column main-menu">
+    <a *ngFor="let item of menuItems"
+       (click)="navigateTo(item)"
+       [class.active]="isActive(item.route)"
+       class="nav-link"
+       role="button">
+      
+      <i [class]="item.icon"></i>
+      <span class="menu-text">{{ item.label }}</span>
+      
+      <span *ngIf="item.badge" class="badge">
+        {{ item.badge }}
+      </span>
+    </a>
+  </nav>
+
+  <!-- Bottom Menu -->
+  <nav class="nav flex-column bottom-menu">
+    <a *ngFor="let item of bottomMenuItems"
+       (click)="navigateTo(item)"
+       [class.active]="isActive(item.route)"
+       class="nav-link"
+       role="button">
+      
+      <i [class]="item.icon"></i>
+      <span class="menu-text">{{ item.label }}</span>
+    </a>
+  </nav>
+</aside>

@@ -1,0 +1,210 @@
+<div class="requests-page">
+  
+  <div *ngIf="isLoading" class="text-center py-5">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">جاري التحميل...</span>
+    </div>
+  </div>
+
+  <div *ngIf="errorMessage" class="alert alert-danger" role="alert">
+    {{ errorMessage }}
+  </div>
+
+  <div *ngIf="!isLoading">
+    <div class="page-header mb-4">
+      <div class="d-flex align-items-center justify-content-between flex-wrap">
+        <div>
+          <p class="text-muted small mb-1">إدارة شاملة لجميع عمليات أكاديميتك بسلاسة</p>
+          <h4 class="mb-0 fw-bold">قائمة الطلاب</h4>
+        </div>
+      </div>
+    </div>
+
+    <div class="row g-3 mb-4">
+      <div class="col-12 col-lg-6">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-body p-4">
+            <div class="d-flex align-items-center gap-3 mb-4">
+              <img [src]="selectedStudent.avatar" 
+                   [alt]="selectedStudent.name" 
+                   class="rounded-circle student-avatar"
+                   width="70"
+                   height="70">
+              <div>
+                <p class="text-muted small mb-1">الطالب</p>
+                <h5 class="mb-0 fw-bold">{{ selectedStudent.name }}</h5>
+              </div>
+            </div>
+
+            <div class="student-details mb-4">
+              <div class="detail-row">
+                <span class="detail-label">رقم الهاتف</span>
+                <span class="detail-value">{{ selectedStudent.phone || '-' }}</span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-label">الدورة المشترك بها</span>
+                <span class="detail-value">{{ selectedStudent.course || '-' }}</span>
+              </div>
+              <!-- <div class="detail-row">
+                <span class="detail-label">الحالة</span>
+                <span [class]="'badge rounded-pill status-badge bg-' + 
+                  (selectedStudent.status === 'قيد المراجعة' ? 'warning' : 
+                   selectedStudent.status === 'مقبول' ? 'success' : 'danger')">
+                  {{ selectedStudent.status }}
+                </span>
+              </div> -->
+            </div>
+
+            <div class="action-buttons">
+              <div class="row g-2">
+                <div class="col-6">
+                  <button 
+                    class="btn btn-add-course w-100" 
+                    (click)="openEnrollModal()"
+                    [disabled]="!selectedStudent.id">
+                    <i class="bi bi-plus-lg me-2"></i>
+                    إضافة طالب للدورة
+                  </button>
+                </div>
+                <div class="col-6">
+                  <button 
+                    class="btn btn-delete w-100" 
+                    (click)="rejectStudent()"
+                    [disabled]="!selectedStudent.id">
+                    <i class="bi bi-trash me-2"></i>
+                    حذف
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-12 col-lg-6">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-body p-4">
+            <h6 class="fw-bold mb-4">معلومات الطالب</h6>
+            
+            <div class="info-grid">
+              <div class="info-item">
+                <span class="info-label">ID</span>
+                <span class="info-value">{{ selectedStudent.id ? (selectedStudent.id | slice:0:8) + '...' : '-' }}</span>
+              </div>
+
+              <div class="info-item">
+                <span class="info-label">تاريخ الانضمام</span>
+                <span class="info-value">{{ selectedStudent.joinDate || '-' }}</span>
+              </div>
+<!-- 
+              <div class="info-item">
+                <span class="info-label">الحالة</span>
+                <span [class]="'badge rounded-pill status-badge bg-' + 
+                  (selectedStudent.status === 'قيد المراجعة' ? 'warning' : 
+                   selectedStudent.status === 'مقبول' ? 'success' : 'danger')">
+                  {{ selectedStudent.status }}
+                </span>
+              </div> -->
+
+              <div class="info-item">
+                <span class="info-label">الجنس</span>
+                <span class="info-value">{{ selectedStudent.gender || '-' }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <app-table
+      [data]="students"
+      [columns]="tableColumns"
+      [actions]="tableActions"
+      [title]="'قائمة الطلاب'"
+      [searchPlaceholder]="'بحث بالاسم أو رقم الهاتف...'"
+      [showSearch]="true"
+      [showFilter]="true"
+      [showCheckboxes]="true"
+      [showStatusColumn]="false"
+      [itemsPerPage]="itemsPerPage"
+      [currentPage]="currentPage"
+      [totalItems]="students.length"
+      (rowClick)="onRowClick($event)"
+      (searchChange)="onSearch($event)"
+      (pageChange)="onPageChange($event)"
+      (selectionChange)="onSelectionChange($event)"
+      (sortChange)="onSortChange($event)">
+    </app-table>
+  </div>
+
+  <div class="modal fade" [class.show]="showEnrollModal" [style.display]="showEnrollModal ? 'block' : 'none'" 
+       tabindex="-1" role="dialog" *ngIf="showEnrollModal">
+    <div class="modal-backdrop fade" [class.show]="showEnrollModal" (click)="closeEnrollModal()"></div>
+    <div class="modal-dialog modal-dialog-centered" role="document">
+      <div class="modal-content">
+        <div class="modal-header border-0 pb-0">
+          <h5 class="modal-title fw-bold">تسجيل طالب في دورة</h5>
+          <button type="button" class="btn-close" (click)="closeEnrollModal()"></button>
+        </div>
+        <div class="modal-body pt-2">
+          <div class="enrollment-student-info mb-4">
+            <div class="d-flex align-items-center gap-3 p-3 bg-light rounded">
+              <img [src]="selectedStudent.avatar" 
+                   [alt]="selectedStudent.name" 
+                   class="rounded-circle"
+                   width="50"
+                   height="50">
+              <div>
+                <p class="text-muted small mb-0">الطالب</p>
+                <h6 class="mb-0 fw-bold">{{ selectedStudent.name }}</h6>
+              </div>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label for="courseSelect" class="form-label fw-semibold">اختر الدورة</label>
+            <select 
+              class="form-select" 
+              id="courseSelect" 
+              [(ngModel)]="enrollmentData.courseId"
+              required>
+              <option value="" disabled selected>-- اختر دورة --</option>
+              <option *ngFor="let course of courses" [value]="course.id">
+                {{ course.title }}
+              </option>
+            </select>
+          </div>
+
+          <div class="mb-3">
+            <label for="enrollmentDate" class="form-label fw-semibold">تاريخ التسجيل</label>
+            <input 
+              type="date" 
+              class="form-control" 
+              id="enrollmentDate"
+              [(ngModel)]="enrollmentData.enrollmentDate"
+              [value]="enrollmentData.enrollmentDate | date:'yyyy-MM-dd'">
+          </div>
+
+          <div *ngIf="enrollmentData.courseId" class="alert alert-info mb-0">
+            <i class="bi bi-info-circle me-2"></i>
+            سيتم تسجيل الطالب في الدورة المختارة وتحديث حالته إلى "مقبول"
+          </div>
+        </div>
+        <div class="modal-footer border-0 pt-0">
+          <button type="button" class="btn btn-secondary" (click)="closeEnrollModal()" [disabled]="isEnrolling">
+            إلغاء
+          </button>
+          <button 
+            type="button" 
+            class="btn btn-primary" 
+            (click)="enrollStudent()"
+            [disabled]="!enrollmentData.courseId || isEnrolling">
+            <span *ngIf="isEnrolling" class="spinner-border spinner-border-sm me-2"></span>
+            {{ isEnrolling ? 'جاري التسجيل...' : 'تسجيل الطالب' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>

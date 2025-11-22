@@ -1,0 +1,152 @@
+<div class="answers-container">
+  <!-- Header -->
+  <div class="header">
+    <h2 class="page-title">قائمة الأسئلة</h2>
+    <div class="header-info">
+      <span class="total-count">إجمالي الأسئلة: {{ questions.length }}</span>
+    </div>
+  </div>
+
+  <!-- Filter by Question -->
+  <div class="filter-section" *ngIf="questions.length > 0">
+    <label>تصفية حسب السؤال:</label>
+    <select [(ngModel)]="selectedQuestionFilter" (change)="filterByQuestion()" class="filter-select">
+      <option value="">-- جميع الأسئلة --</option>
+      <option *ngFor="let question of questions" [value]="question.id">
+        {{ question.text }}
+      </option>
+    </select>
+  </div>
+
+  <!-- Questions List -->
+  <div class="questions-list">
+    <div class="question-group" *ngFor="let question of getFilteredQuestions(); let i = index">
+      
+      <!-- Question Header -->
+      <div class="question-header-card">
+        <div class="question-info">
+          <div class="question-number">السؤال {{ i + 1 }}</div>
+          <h3 class="question-title">{{ question.text }}</h3>
+          <div class="question-meta-row">
+            <span class="question-points">{{ question.point }} نقاط</span>
+            <span class="answers-count-badge" *ngIf="getAnswersForQuestion(question.id).length > 0">
+              {{ getAnswersForQuestion(question.id).length }} إجابات
+            </span>
+          </div>
+        </div>
+        
+        <button 
+          class="btn-add-answer" 
+          (click)="toggleAddAnswerForm(question.id)"
+        >
+          <span *ngIf="!showAddForm[question.id]">+ إضافة إجابة</span>
+          <span *ngIf="showAddForm[question.id]">✕ إلغاء</span>
+        </button>
+      </div>
+
+      <!-- Add Answer Form -->
+      <div class="add-answer-form" *ngIf="showAddForm[question.id]">
+        <h4>إضافة إجابة جديدة</h4>
+        
+        <div class="form-group">
+          <label>نص الإجابة <span class="required">*</span></label>
+          <input 
+            type="text" 
+            [(ngModel)]="newAnswer[question.id].text" 
+            placeholder="أدخل نص الإجابة"
+            class="form-control"
+          />
+        </div>
+
+        <div class="form-group-checkbox">
+          <label class="checkbox-label">
+            <input 
+              type="checkbox" 
+              [(ngModel)]="newAnswer[question.id].isCorrect"
+            />
+            <span>هذه هي الإجابة الصحيحة ✓</span>
+          </label>
+        </div>
+
+        <div class="form-actions-inline">
+          <button class="btn-submit-small" (click)="addAnswer(question.id)">حفظ الإجابة</button>
+          <button class="btn-cancel-small" (click)="toggleAddAnswerForm(question.id)">إلغاء</button>
+        </div>
+      </div>
+
+      <!-- Answers List for this Question -->
+      <div class="answers-section">
+        <div class="answers-grid" *ngIf="getAnswersForQuestion(question.id).length > 0">
+          <div 
+            class="answer-card" 
+            *ngFor="let answer of getAnswersForQuestion(question.id)"
+            [class.correct-answer]="answer.isCorrect"
+            [class.wrong-answer]="!answer.isCorrect"
+          >
+            <div class="answer-content">
+              <div class="answer-icon">
+                <svg *ngIf="answer.isCorrect" width="24" height="24" viewBox="0 0 24 24" fill="none">
+                  <circle cx="12" cy="12" r="10" fill="#4caf50" stroke="#2e7d32" stroke-width="2"/>
+                  <path d="M8 12L11 15L16 9" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <svg *ngIf="!answer.isCorrect" width="24" height="24" viewBox="0 0 24 24" fill="none">
+                  <circle cx="12" cy="12" r="10" fill="#f44336" stroke="#c62828" stroke-width="2"/>
+                  <path d="M15 9L9 15M9 9L15 15" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </div>
+              
+              <div class="answer-text">{{ answer.text }}</div>
+              
+              <div class="answer-status-badge" [class.correct]="answer.isCorrect">
+                {{ answer.isCorrect ? 'إجابة صحيحة' : 'إجابة خاطئة' }}
+              </div>
+            </div>
+
+            <button class="btn-delete-answer" (click)="deleteAnswer(answer.id)" title="حذف الإجابة">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Empty State for Question -->
+        <div class="no-answers-card" *ngIf="getAnswersForQuestion(question.id).length === 0">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="10" stroke="#bdc3c7" stroke-width="2"/>
+            <path d="M12 8V12M12 16H12.01" stroke="#bdc3c7" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+          <p>لا توجد إجابات لهذا السؤال</p>
+          <button class="btn-add-first" (click)="toggleAddAnswerForm(question.id)">
+            إضافة أول إجابة
+          </button>
+        </div>
+      </div>
+
+      <!-- Summary -->
+      <div class="question-summary" *ngIf="getAnswersForQuestion(question.id).length > 0">
+        <span class="summary-item">
+          إجمالي الإجابات: <strong>{{ getAnswersForQuestion(question.id).length }}</strong>
+        </span>
+        <span class="summary-item correct">
+          الصحيحة: <strong>{{ getCorrectAnswersCount(question.id) }}</strong>
+        </span>
+        <span class="summary-item wrong">
+          الخاطئة: <strong>{{ getWrongAnswersCount(question.id) }}</strong>
+        </span>
+      </div>
+    </div>
+
+    <!-- Empty State -->
+    <div class="empty-state" *ngIf="questions.length === 0">
+      <div class="empty-icon">
+        <svg width="64" height="64" viewBox="0 0 24 24" fill="none">
+          <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="#bdc3c7" stroke-width="2"/>
+          <path d="M12 16V12M12 8H12.01" stroke="#bdc3c7" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <p>لا توجد أسئلة متاحة</p>
+      <p class="hint">قم بإضافة أسئلة أولاً من صفحة الأسئلة</p>
+    </div>
+  </div>
+</div>

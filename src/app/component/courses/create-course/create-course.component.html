@@ -1,0 +1,508 @@
+<div class="create-course-page">
+  
+  <!-- Page Header -->
+  <div class="page-header mb-4">
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+      <div class="d-flex align-items-center gap-3">
+        <button class="btn btn-link text-dark p-0" (click)="cancel()">
+          <i class="bi bi-arrow-right fs-4"></i>
+        </button>
+        <div>
+          <h4 class="mb-0 fw-bold">تعديل وإدارة الدورة</h4>
+          <p class="text-muted small mb-0">{{ courseData.title }}</p>
+        </div>
+      </div>
+      <button 
+        class="btn btn-warning" 
+        (click)="openEditCourseModal()"
+        *ngIf="isEditMode">
+        <i class="bi bi-pencil-square me-2"></i>
+        تعديل بيانات الدورة
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading -->
+  <div *ngIf="isLoading" class="text-center py-5">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">جاري التحميل...</span>
+    </div>
+  </div>
+
+  <div *ngIf="!isLoading">
+    
+    <!-- بيانات الدورة (للعرض فقط) -->
+    <div class="card border-0 shadow-sm mb-4">
+      <div class="card-body p-4">
+        
+        <div class="d-flex align-items-center justify-content-between mb-4">
+          <div>
+            <h5 class="fw-bold mb-1">بيانات الدورة</h5>
+            <p class="text-muted small mb-0">البيانات الأساسية للدورة (للعرض فقط)</p>
+          </div>
+          <span class="badge bg-secondary">للعرض فقط</span>
+        </div>
+
+        <div class="row g-4">
+          
+          <!-- صورة الدورة -->
+          <div class="col-12" *ngIf="imagePreview">
+            <div class="course-image-preview">
+              <img [src]="imagePreview" alt="Course" class="img-fluid rounded">
+            </div>
+          </div>
+
+          <!-- اسم الدورة -->
+          <div class="col-md-6">
+            <label class="form-label text-muted small">اسم الدورة</label>
+            <input 
+              type="text" 
+              class="form-control" 
+              [value]="courseData.title" 
+              disabled>
+          </div>
+
+          <!-- المدرب -->
+          <div class="col-md-6">
+            <label class="form-label text-muted small">المدرب</label>
+            <input 
+              type="text" 
+              class="form-control" 
+              [value]="courseData.instructorName" 
+              disabled>
+          </div>
+
+          <!-- وصف الدورة -->
+          <div class="col-12">
+            <label class="form-label text-muted small">وصف الدورة</label>
+            <textarea 
+              class="form-control" 
+              rows="3" 
+              [value]="courseData.description" 
+              disabled></textarea>
+          </div>
+
+          <!-- التصنيف -->
+          <div class="col-md-4">
+            <label class="form-label text-muted small">التصنيف</label>
+            <input 
+              type="text" 
+              class="form-control" 
+              [value]="courseData.typeStatus" 
+              disabled>
+          </div>
+
+          <!-- نوع المحتوى -->
+          <div class="col-md-4">
+            <label class="form-label text-muted small">نوع المحتوى</label>
+            <input 
+              type="text" 
+              class="form-control" 
+              [value]="courseData.contentType" 
+              disabled>
+          </div>
+
+          <!-- السعر -->
+          <div class="col-md-4">
+            <label class="form-label text-muted small">السعر</label>
+            <div class="input-group">
+              <input 
+                type="text" 
+                class="form-control" 
+                [value]="courseData.price" 
+                disabled>
+              <span class="input-group-text">ریال</span>
+            </div>
+          </div>
+
+          <!-- تاريخ البداية -->
+          <div class="col-md-6">
+            <label class="form-label text-muted small">تاريخ البداية</label>
+            <input 
+              type="date" 
+              class="form-control" 
+              [value]="courseData.startDate" 
+              disabled>
+          </div>
+
+          <!-- تاريخ الانتهاء -->
+          <div class="col-md-6">
+            <label class="form-label text-muted small">تاريخ الانتهاء</label>
+            <input 
+              type="date" 
+              class="form-control" 
+              [value]="courseData.endDate" 
+              disabled>
+          </div>
+
+          <!-- تفاصيل إضافية -->
+          <div class="col-12" *ngIf="courseData.courseDetails">
+            <label class="form-label text-muted small">تفاصيل إضافية</label>
+            <textarea 
+              class="form-control" 
+              rows="2" 
+              [value]="courseData.courseDetails" 
+              disabled></textarea>
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+
+    <!-- محتويات الدورة -->
+    <div class="card border-0 shadow-sm mb-4">
+      <div class="card-body p-4">
+        
+        <div class="d-flex align-items-center justify-content-between mb-4">
+          <div>
+            <h5 class="fw-bold mb-1">محتويات الدورة</h5>
+            <p class="text-muted small mb-0">أضف أو عدل الوحدات والمحاضرات</p>
+          </div>
+          <button 
+            type="button" 
+            class="btn btn-primary btn-sm"
+            (click)="addModule()">
+            <i class="bi bi-plus-lg me-2"></i>
+            إضافة وحدة
+          </button>
+        </div>
+
+        <!-- قائمة الوحدات -->
+        <div class="modules-list" *ngIf="modules.length > 0">
+          <div 
+            *ngFor="let module of modules; let i = index" 
+            class="module-item mb-3">
+            
+            <!-- رأس الوحدة -->
+            <div class="module-header d-flex align-items-center justify-content-between p-3 bg-light rounded-top">
+              <div class="d-flex align-items-center gap-2 flex-grow-1" (click)="toggleModule(i)" style="cursor: pointer;">
+                <button type="button" class="btn btn-sm btn-link text-dark p-0">
+                  <i class="bi" [class.bi-chevron-down]="module.isExpanded" [class.bi-chevron-left]="!module.isExpanded"></i>
+                </button>
+                <span class="fw-medium">{{ module.title || 'وحدة ' + (i + 1) }}</span>
+                <span class="badge bg-secondary ms-2">{{ module.lectures.length }} محاضرة</span>
+              </div>
+              <button 
+                type="button" 
+                class="btn btn-sm btn-link text-danger p-0"
+                (click)="removeModule(i)">
+                <i class="bi bi-trash"></i>
+              </button>
+            </div>
+
+            <!-- محتوى الوحدة -->
+            <div class="module-content p-3 border border-top-0 rounded-bottom" *ngIf="module.isExpanded">
+              
+              <!-- عنوان الوحدة -->
+              <div class="mb-3">
+                <label class="form-label small fw-medium">عنوان الوحدة <span class="text-danger">*</span></label>
+                <input 
+                  type="text" 
+                  class="form-control form-control-sm"
+                  [(ngModel)]="module.title"
+                  [name]="'moduleTitle_' + i"
+                  placeholder="مثال: مقدمة في البرمجة">
+              </div>
+
+              <!-- وصف الوحدة -->
+              <div class="mb-3">
+                <label class="form-label small fw-medium">وصف الوحدة <span class="text-danger">*</span></label>
+                <textarea 
+                  class="form-control form-control-sm"
+                  [(ngModel)]="module.description"
+                  [name]="'moduleDesc_' + i"
+                  rows="2"
+                  placeholder="وصف مختصر للوحدة"></textarea>
+              </div>
+
+              <!-- المحاضرات -->
+              <div class="lectures-section">
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                  <label class="form-label small fw-medium mb-0">المحاضرات</label>
+                  <button 
+                    type="button" 
+                    class="btn btn-outline-secondary btn-sm"
+                    (click)="addLecture(i)">
+                    <i class="bi bi-plus-lg me-1"></i>
+                    إضافة محاضرة
+                  </button>
+                </div>
+
+                <!-- قائمة المحاضرات -->
+                <div class="lectures-list" *ngIf="module.lectures.length > 0">
+                  <div 
+                    *ngFor="let lecture of module.lectures; let j = index" 
+                    class="lecture-item bg-white border rounded p-3 mb-2">
+                    
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                      <span class="small text-muted">محاضرة {{ j + 1 }}</span>
+                      <button 
+                        type="button" 
+                        class="btn btn-sm btn-link text-danger p-0"
+                        (click)="removeLecture(i, j)">
+                        <i class="bi bi-x-lg"></i>
+                      </button>
+                    </div>
+
+                    <div class="row g-2">
+                      <div class="col-md-8">
+                        <input 
+                          type="text" 
+                          class="form-control form-control-sm"
+                          [(ngModel)]="lecture.title"
+                          [name]="'lectureTitle_' + i + '_' + j"
+                          placeholder="عنوان المحاضرة">
+                      </div>
+
+                      <div class="col-md-4">
+                        <input 
+                          type="date" 
+                          class="form-control form-control-sm"
+                          [(ngModel)]="lecture.scheduledAt"
+                          [name]="'lectureDate_' + i + '_' + j">
+                      </div>
+                    </div>
+
+                  </div>
+                </div>
+
+                <!-- رسالة عدم وجود محاضرات -->
+                <div *ngIf="module.lectures.length === 0" class="text-center py-3 text-muted small">
+                  <i class="bi bi-camera-video d-block fs-4 mb-2"></i>
+                  لا توجد محاضرات. اضغط "إضافة محاضرة" للبدء
+                </div>
+
+              </div>
+
+            </div>
+
+          </div>
+        </div>
+
+        <!-- رسالة عدم وجود وحدات -->
+        <div *ngIf="modules.length === 0" class="text-center py-5 text-muted">
+          <i class="bi bi-collection d-block fs-1 mb-3"></i>
+          <p class="mb-3">لا توجد وحدات دراسية</p>
+          <button 
+            type="button" 
+            class="btn btn-primary btn-sm"
+            (click)="addModule()">
+            <i class="bi bi-plus-lg me-2"></i>
+            إضافة وحدة جديدة
+          </button>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- أزرار الحفظ والإلغاء -->
+    <div class="d-flex justify-content-end gap-2 mb-4">
+      <button 
+        type="button" 
+        class="btn btn-outline-secondary px-4"
+        (click)="cancel()"
+        [disabled]="isSaving">
+        إلغاء
+      </button>
+      <button 
+        type="button" 
+        class="btn btn-success px-4"
+        (click)="saveModulesAndLectures()"
+        [disabled]="isSaving">
+        <span *ngIf="isSaving" class="spinner-border spinner-border-sm me-2"></span>
+        <i class="bi bi-check-lg me-2" *ngIf="!isSaving"></i>
+        حفظ المحتويات والمحاضرات
+      </button>
+    </div>
+  </div>
+
+  <!-- Edit Course Modal -->
+  <div class="modal-backdrop" *ngIf="showEditModal" (click)="closeEditModal()"></div>
+
+  <div class="modal" [class.show]="showEditModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <div class="modal-content">
+        
+        <!-- Modal Header -->
+        <div class="modal-header">
+          <h5 class="modal-title fw-bold">
+            <i class="bi bi-pencil-square me-2"></i>
+            تعديل بيانات الدورة
+          </h5>
+          <button type="button" class="btn-close" (click)="closeEditModal()" [disabled]="isSaving"></button>
+        </div>
+
+        <!-- Modal Body -->
+        <div class="modal-body">
+          
+          <div class="alert alert-warning d-flex align-items-start mb-4">
+            <i class="bi bi-exclamation-triangle fs-5 me-2 mt-1"></i>
+            <div class="small">
+              <strong>تنبيه:</strong> تعديل البيانات الأساسية قد يؤثر على الطلاب المسجلين في الدورة.
+            </div>
+          </div>
+
+          <form>
+            
+            <!-- صورة الدورة -->
+            <div class="mb-3">
+              <label class="form-label fw-medium">صورة الدورة</label>
+              <div class="image-upload-area">
+                <div *ngIf="!imagePreview" class="upload-placeholder" (click)="imageInput.click()">
+                  <i class="bi bi-cloud-upload fs-1 text-muted"></i>
+                  <p class="text-muted mb-0 mt-2">اضغط لرفع صورة</p>
+                  <small class="text-muted">PNG, JPG حتى 5MB</small>
+                </div>
+                <div *ngIf="imagePreview" class="image-preview-container">
+                  <img [src]="imagePreview" alt="Course" class="image-preview">
+                  <button type="button" class="btn btn-sm btn-danger remove-btn" (click)="removeImage()">
+                    <i class="bi bi-x-lg"></i>
+                  </button>
+                </div>
+                <input 
+                  type="file" 
+                  #imageInput 
+                  hidden 
+                  accept="image/*"
+                  (change)="onImageSelected($event)">
+              </div>
+            </div>
+
+            <!-- اسم الدورة -->
+            <div class="mb-3">
+              <label class="form-label fw-medium">اسم الدورة <span class="text-danger">*</span></label>
+              <input 
+                type="text" 
+                class="form-control"
+                [(ngModel)]="editForm.title"
+                name="title"
+                placeholder="أدخل اسم الدورة">
+            </div>
+
+            <!-- وصف الدورة -->
+            <div class="mb-3">
+              <label class="form-label fw-medium">وصف الدورة <span class="text-danger">*</span></label>
+              <textarea 
+                class="form-control"
+                [(ngModel)]="editForm.description"
+                name="description"
+                rows="3"
+                placeholder="أدخل وصف الدورة"></textarea>
+            </div>
+
+            <div class="row g-3">
+              
+              <!-- المدرب -->
+              <div class="col-md-6">
+                <label class="form-label fw-medium">المدرب <span class="text-danger">*</span></label>
+                <select 
+                  class="form-select"
+                  [(ngModel)]="editForm.instructorId"
+                  name="instructorId">
+                  <option value="" disabled>-- اختر المدرب --</option>
+                  <option *ngFor="let instructor of instructors" [value]="instructor.id">
+                    {{ instructor.firstName }} {{ instructor.lastName }}
+                  </option>
+                </select>
+              </div>
+
+              <!-- التصنيف -->
+              <div class="col-md-6">
+                <label class="form-label fw-medium">التصنيف <span class="text-danger">*</span></label>
+                <select 
+                  class="form-select"
+                  [(ngModel)]="editForm.typeStatus"
+                  name="typeStatus">
+                  <option value="Active">نشط</option>
+                  <option value="Paid">مدفوع</option>
+                  <option value="Free">مجاني</option>
+                </select>
+              </div>
+
+              <!-- نوع المحتوى -->
+              <div class="col-md-6">
+                <label class="form-label fw-medium">نوع المحتوى <span class="text-danger">*</span></label>
+                <input 
+                  type="text" 
+                  class="form-control"
+                  [(ngModel)]="editForm.contentType"
+                  name="contentType"
+                  placeholder="مثال: فيديو، PDF">
+              </div>
+
+              <!-- السعر -->
+              <div class="col-md-6">
+                <label class="form-label fw-medium">السعر <span class="text-danger">*</span></label>
+                <div class="input-group">
+                  <input 
+                    type="number" 
+                    class="form-control"
+                    [(ngModel)]="editForm.price"
+                    name="price"
+                    placeholder="0.00">
+                  <span class="input-group-text">ریال</span>
+                </div>
+              </div>
+
+              <!-- تاريخ البداية -->
+              <div class="col-md-6">
+                <label class="form-label fw-medium">تاريخ البداية <span class="text-danger">*</span></label>
+                <input 
+                  type="date" 
+                  class="form-control"
+                  [(ngModel)]="editForm.startDate"
+                  name="startDate">
+              </div>
+
+              <!-- تاريخ الانتهاء -->
+              <div class="col-md-6">
+                <label class="form-label fw-medium">تاريخ الانتهاء <span class="text-danger">*</span></label>
+                <input 
+                  type="date" 
+                  class="form-control"
+                  [(ngModel)]="editForm.endDate"
+                  name="endDate">
+              </div>
+
+              <!-- تفاصيل إضافية -->
+              <div class="col-12">
+                <label class="form-label fw-medium">تفاصيل إضافية</label>
+                <textarea 
+                  class="form-control"
+                  [(ngModel)]="editForm.courseDetails"
+                  name="courseDetails"
+                  rows="3"
+                  placeholder="أي تفاصيل إضافية عن الدورة"></textarea>
+              </div>
+
+            </div>
+
+          </form>
+        </div>
+
+        <!-- Modal Footer -->
+        <div class="modal-footer">
+          <button 
+            type="button" 
+            class="btn btn-outline-secondary"
+            (click)="closeEditModal()"
+            [disabled]="isSaving">
+            إلغاء
+          </button>
+          <button 
+            type="button" 
+            class="btn btn-warning"
+            (click)="saveBasicCourseData()"
+            [disabled]="isSaving || !isEditFormValid()">
+            <span *ngIf="isSaving" class="spinner-border spinner-border-sm me-2"></span>
+            <i class="bi bi-check-lg me-1" *ngIf="!isSaving"></i>
+            حفظ التعديلات
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+</div>

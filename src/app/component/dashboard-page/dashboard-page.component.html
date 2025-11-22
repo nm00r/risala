@@ -1,0 +1,208 @@
+<div class="dashboard-page">
+  
+  <div *ngIf="isLoading" class="text-center py-5">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">جاري التحميل...</span>
+    </div>
+  </div>
+
+  <div *ngIf="errorMessage" class="alert alert-danger" role="alert">
+    {{ errorMessage }}
+  </div>
+
+  <div class="page-header mb-4">
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+      <div>
+        <h4 class="mb-0 fw-bold">أهلاً بعودتك {{ currentUserName }}!</h4>
+        <p class="text-muted mb-0 mt-1" style="font-size: 0.875rem;">إدارة شاملة لجميع عمليات أكاديميتك بسلاسة</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-3 mb-4">
+    <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
+      <div 
+        class="card shadow-sm stats-card clickable-card" 
+        [class.active-card]="activeTable === 'students'"
+        (click)="switchToStudents()">
+        <div class="card-body p-4">
+          <div class="d-flex align-items-center justify-content-between mb-3">
+            <p class="mb-0">إجمالي الطلاب</p>
+            <div class="stat-icon">
+              <i class="bi bi-people-fill"></i>
+            </div>
+          </div>
+          <h2 class="mb-0">{{ stats.totalStudents }}</h2>
+          <div class="percentage-text">
+            <span>من الشهر الماضي +5%</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
+      <div 
+        class="card shadow-sm stats-card clickable-card" 
+        [class.active-card]="activeTable === 'instructors'"
+        (click)="switchToInstructors()">
+        <div class="card-body p-4">
+          <div class="d-flex align-items-center justify-content-between mb-3">
+            <p class="mb-0">إجمالي المعلمين</p>
+            <div class="stat-icon">
+              <i class="bi bi-person-badge-fill"></i>
+            </div>
+          </div>
+          <h2 class="mb-0">{{ stats.totalTeachers }}</h2>
+          <div class="percentage-text">
+            <span>من الشهر الماضي +5%</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <app-table
+    *ngIf="!isLoading && activeTable === 'students'"
+    [data]="students"
+    [columns]="studentTableColumns"
+    [actions]="studentTableActions"
+    [title]="'قائمة الطلاب'"
+    [searchPlaceholder]="'بحث بالاسم أو رقم الهاتف...'"
+    [showSearch]="true"
+    [showFilter]="true"
+    [showStatusColumn]="false"
+    [showCheckboxes]="true"
+    [itemsPerPage]="itemsPerPage"
+    [currentPage]="currentPage"
+    [totalItems]="students.length"
+    (rowClick)="onRowClick($event)"
+    (searchChange)="onSearch($event)"
+    (pageChange)="onPageChange($event)"
+    (selectionChange)="onSelectionChange($event)"
+    (sortChange)="onSortChange($event)">
+  </app-table>
+
+  <app-table
+    *ngIf="!isLoading && activeTable === 'instructors'"
+    [data]="instructors"
+    [columns]="instructorTableColumns"
+    [actions]="instructorTableActions"
+    [title]="'قائمة المعلمين'"
+    [searchPlaceholder]="'بحث بالاسم أو رقم الهاتف...'"
+    [showSearch]="true"
+    [showFilter]="true"
+    [showStatusColumn]="false"
+    [showCheckboxes]="true"
+    [itemsPerPage]="itemsPerPage"
+    [currentPage]="currentPage"
+    [totalItems]="instructors.length"
+    (rowClick)="onRowClick($event)"
+    (searchChange)="onSearch($event)"
+    (pageChange)="onPageChange($event)"
+    (selectionChange)="onSelectionChange($event)"
+    (sortChange)="onSortChange($event)">
+  </app-table>
+
+  <div class="modal fade" [class.show]="showAddStudentModal" [style.display]="showAddStudentModal ? 'block' : 'none'" tabindex="-1">
+    <div class="modal-backdrop fade" [class.show]="showAddStudentModal" (click)="closeAddStudentModal()"></div>
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        
+        <div class="modal-header border-0 pb-0">
+          <h5 class="modal-title fw-bold">إضافة طالب جديد</h5>
+          <button type="button" class="btn-close" (click)="closeAddStudentModal()"></button>
+        </div>
+
+        <div class="modal-body pt-3">
+          <div class="mb-3">
+            <label class="form-label">الاسم الأول <span class="text-danger">*</span></label>
+            <input 
+              type="text" 
+              class="form-control" 
+              [(ngModel)]="studentForm.firstName"
+              name="firstName"
+              placeholder="أدخل الاسم الأول">
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">اسم العائلة <span class="text-danger">*</span></label>
+            <input 
+              type="text" 
+              class="form-control" 
+              [(ngModel)]="studentForm.lastName"
+              name="lastName"
+              placeholder="أدخل اسم العائلة">
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">البريد الإلكتروني <span class="text-danger">*</span></label>
+            <input 
+              type="email" 
+              class="form-control" 
+              [(ngModel)]="studentForm.email"
+              name="email"
+              placeholder="example@domain.com">
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">رقم الهاتف <span class="text-danger">*</span></label>
+            <input 
+              type="tel" 
+              class="form-control" 
+              [(ngModel)]="studentForm.phoneNumber"
+              name="phoneNumber"
+              placeholder="+966 *** ****">
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">الجنس <span class="text-danger">*</span></label>
+            <select 
+              class="form-select" 
+              [(ngModel)]="studentForm.gender"
+              name="gender">
+              <option value="M">ذكر</option>
+              <option value="F">أنثى</option>
+            </select>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">كلمة المرور <span class="text-danger">*</span></label>
+            <input 
+              type="password" 
+              class="form-control" 
+              [(ngModel)]="studentForm.password"
+              name="password"
+              placeholder="أدخل كلمة المرور">
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">اسم المستخدم (اختياري)</label>
+            <input 
+              type="text" 
+              class="form-control" 
+              [(ngModel)]="studentForm.userName"
+              name="userName"
+              placeholder="سيتم استخدام البريد الإلكتروني إذا تُرك فارغاً">
+          </div>
+        </div>
+
+        <div class="modal-footer border-0 pt-0">
+          <button type="button" class="btn btn-outline-secondary" (click)="closeAddStudentModal()">
+            إلغاء
+          </button>
+          <button 
+            type="button" 
+            class="btn btn-primary" 
+            (click)="addStudent()"
+            [disabled]="isLoading">
+            <span *ngIf="isLoading" class="spinner-border spinner-border-sm me-2"></span>
+            <i *ngIf="!isLoading" class="bi bi-plus-lg me-2"></i>
+            إضافة الطالب
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+</div>

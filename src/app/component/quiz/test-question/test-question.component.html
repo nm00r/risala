@@ -1,0 +1,180 @@
+<div class="questions-container">
+  <!-- Header -->
+  <div class="header">
+    <h2 class="page-title">قائمة الأسئلة</h2>
+    <button class="btn-add" (click)="toggleAddQuestionForm()">
+      <span *ngIf="!showAddQuestionForm">+ إضافة سؤال جديد</span>
+      <span *ngIf="showAddQuestionForm">✕ إلغاء</span>
+    </button>
+  </div>
+
+  <!-- Add Question Form -->
+  <div class="add-form" *ngIf="showAddQuestionForm">
+    <h3>إضافة سؤال جديد</h3>
+    
+    <div class="form-group">
+      <label>نص السؤال <span class="required">*</span></label>
+      <input 
+        type="text" 
+        [(ngModel)]="newQuestion.text" 
+        placeholder="أدخل نص السؤال هنا"
+        class="form-control"
+      />
+    </div>
+
+    <div class="form-group">
+      <label>النقاط <span class="required">*</span></label>
+      <input 
+        type="number" 
+        [(ngModel)]="newQuestion.points" 
+        placeholder="عدد النقاط"
+        class="form-control"
+        min="0"
+      />
+    </div>
+
+    <div class="form-group">
+      <label>صورة السؤال (اختياري)</label>
+      <input 
+        type="file" 
+        (change)="onFileSelected($event)"
+        accept="image/*"
+        class="form-control"
+      />
+    </div>
+
+    <div class="form-actions">
+      <button class="btn-submit" (click)="addQuestion()">حفظ السؤال</button>
+      <button class="btn-cancel" (click)="toggleAddQuestionForm()">إلغاء</button>
+    </div>
+  </div>
+
+  <!-- Questions List -->
+  <div class="questions-list">
+    <div class="question-card" *ngFor="let question of questions; let i = index">
+      
+      <!-- Question Header -->
+      <div class="question-header" (click)="toggleQuestionDetails(question.id)">
+        <div class="question-header-left">
+          <button 
+            class="btn-toggle" 
+            [class.expanded]="question.expanded"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+              <path d="M15 18L9 12L15 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+          
+          <div class="question-info">
+            <div class="question-title">{{ question.text }}</div>
+            <div class="question-meta">
+              <span class="meta-item">{{ question.point }} نقاط</span>
+              <span class="meta-item" *ngIf="question.answers && question.answers.length > 0">
+                {{ question.answers.length }} إجابات
+              </span>
+              <span class="meta-item no-answers-text" *ngIf="!question.answers || question.answers.length === 0">
+                لا توجد إجابات
+              </span>
+            </div>
+          </div>
+        </div>
+        
+        <div class="question-actions-inline" (click)="$event.stopPropagation()">
+          <button class="btn-icon btn-delete-icon" (click)="deleteQuestion(question.id)" title="حذف السؤال">
+            ✕
+          </button>
+        </div>
+      </div>
+
+      <!-- Question Details (Expandable) -->
+      <div class="question-details" *ngIf="question.expanded">
+        
+        <!-- Question Image -->
+        <div class="question-image" *ngIf="question.imageUrl">
+          <img [src]="'https://nafzill-001-site1.ltempurl.com' + question.imageUrl" alt="صورة السؤال" />
+        </div>
+
+        <!-- Answers Section -->
+        <div class="answers-section">
+          <div class="answers-header">
+            <h4>الإجابات المتاحة</h4>
+            <button class="btn-add-answer" (click)="toggleAddAnswerForm(question.id)">
+              <span *ngIf="!showAddAnswerForm[question.id]">+ إضافة إجابة</span>
+              <span *ngIf="showAddAnswerForm[question.id]">✕ إلغاء</span>
+            </button>
+          </div>
+
+          <!-- Add Answer Form -->
+          <div class="add-answer-form" *ngIf="showAddAnswerForm[question.id]">
+            <div class="form-group">
+              <label>نص الإجابة <span class="required">*</span></label>
+              <input 
+                type="text" 
+                [(ngModel)]="newAnswer[question.id].text" 
+                placeholder="أدخل نص الإجابة"
+                class="form-control"
+              />
+            </div>
+
+            <div class="form-group-checkbox">
+              <label class="checkbox-label">
+                <input 
+                  type="checkbox" 
+                  [(ngModel)]="newAnswer[question.id].isCorrect"
+                />
+                <span>إجابة صحيحة ✓</span>
+              </label>
+            </div>
+
+            <div class="form-actions-inline">
+              <button class="btn-submit-small" (click)="addAnswer(question.id)">حفظ الإجابة</button>
+              <button class="btn-cancel-small" (click)="toggleAddAnswerForm(question.id)">إلغاء</button>
+            </div>
+          </div>
+
+          <!-- Answers List -->
+          <div class="answers-list" *ngIf="question.answers && question.answers.length > 0">
+            <div 
+              class="answer-item" 
+              *ngFor="let answer of question.answers"
+            >
+              <div class="answer-content">
+                <div class="answer-text">{{ answer.text }}</div>
+                
+                <div class="answer-status">
+                  <span>{{ answer.isCorrect ? 'إجابة صحيحة' : 'إجابة خاطئة' }}</span>
+                  <div class="status-indicator" [class.correct]="answer.isCorrect" [class.wrong]="!answer.isCorrect">
+                    <span *ngIf="answer.isCorrect">✓</span>
+                    <span *ngIf="!answer.isCorrect">✗</span>
+                  </div>
+                </div>
+              </div>
+              
+              <button class="btn-delete-answer" (click)="deleteAnswer(answer.id, question.id)" title="حذف الإجابة">
+                ✕
+              </button>
+            </div>
+          </div>
+
+          <!-- No Answers Message -->
+          <div class="no-answers-message" *ngIf="!question.answers || question.answers.length === 0">
+            <p>لا توجد إجابات لهذا السؤال</p>
+            <p class="hint">قم بإضافة إجابات لتكتمل عملية إنشاء السؤال</p>
+          </div>
+        </div>
+
+        <!-- Question ID -->
+        <div class="question-id">
+          <span class="id-label">ID:</span>
+          <span class="id-value">{{ question.id }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Empty State -->
+    <div class="empty-state" *ngIf="questions.length === 0">
+      <p>لا توجد أسئلة متاحة حالياً</p>
+      <p class="hint">قم بإضافة سؤال جديد للبدء</p>
+    </div>
+  </div>
+</div>

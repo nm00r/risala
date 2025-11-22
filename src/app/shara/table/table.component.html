@@ -1,0 +1,200 @@
+<div class="shared-table-container">
+  <!-- Table Header -->
+  <div class="table-header">
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+      <h5 class="mb-0 fw-bold">{{ title }}</h5>
+      <div class="d-flex gap-2 align-items-center">
+        <div *ngIf="showSearch" class="search-wrapper">
+          <i class="bi bi-search search-icon-right"></i>
+          <input 
+            type="text" 
+            class="form-control search-input" 
+            [placeholder]="searchPlaceholder"
+            [(ngModel)]="searchTerm"
+            (ngModelChange)="onSearchChange($event)">
+        </div>
+        <button *ngIf="showFilter" class="btn btn-filter">
+          <i class="bi bi-funnel"></i>
+          فلتر
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Table Body -->
+  <div class="table-responsive">
+  <table class="table table-hover align-middle mb-0">
+    <thead class="table-light">
+      <tr>
+        <th *ngIf="showCheckboxes" class="px-4 py-3">
+          <input 
+            type="checkbox" 
+            class="form-check-input"
+            [checked]="allSelected"
+            (change)="toggleSelectAll()">
+        </th>
+
+        <!-- ✅ استخدم ng-container عشان ميبوظش ترتيب الأعمدة -->
+        <ng-container *ngFor="let column of columns">
+          <th 
+            *ngIf="!(column.key === 'status' && !showStatusColumn)"
+            class="px-4 py-3"
+            [class.text-center]="column.align === 'center'"
+            [class.sortable]="column.sortable"
+            [style.width]="column.width"
+            (click)="onSort(column)">
+            <div class="d-flex align-items-center gap-2"
+                [class.justify-content-center]="column.align === 'center'">
+              <span>{{ column.label }}</span>
+              <i *ngIf="column.sortable" 
+                  class="bi bi-chevron-down text-muted small"
+                  [class.bi-chevron-up]="sortColumn === column.key && sortDirection === 'desc'"></i>
+            </div>
+          </th>
+        </ng-container>
+
+        <th *ngIf="actions.length > 0" class="px-4 py-3 text-center">...</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      <tr 
+        *ngFor="let row of paginatedData" 
+        (click)="onRowClick(row, $event)"
+        class="table-row">
+
+        <td *ngIf="showCheckboxes" class="px-4 checkbox-cell">
+          <input 
+            type="checkbox" 
+            class="form-check-input"
+            [checked]="isRowSelected(row)"
+            (click)="toggleRowSelection(row, $event)">
+        </td>
+
+        <!-- ✅ نفس الفكرة في الـtbody -->
+        <ng-container *ngFor="let column of columns">
+          <td 
+            *ngIf="!(column.key === 'status' && !showStatusColumn)"
+            class="px-4"
+            [class.text-center]="column.align === 'center'">
+
+            <!-- Custom Template -->
+            <ng-container *ngIf="column.customTemplate">
+              <ng-container 
+                *ngTemplateOutlet="column.customTemplate; context: { $implicit: row, value: getCellValue(row, column) }">
+              </ng-container>
+            </ng-container>
+
+            <!-- Default Rendering based on column key -->
+            <ng-container *ngIf="!column.customTemplate">
+
+              <!-- ID -->
+              <span *ngIf="column.key === 'id'" class="text-muted fw-semibold small">
+                {{ getCellValue(row, column) }}
+              </span>
+              
+              <!-- Status Badge -->
+              <span *ngIf="column.key === 'status' && showStatusColumn" 
+                    [class]="'badge rounded-pill ' + getStatusBadgeClass(getCellValue(row, column))">
+                {{ getCellValue(row, column) }}
+              </span>
+              
+              <!-- Name with Avatar -->
+              <div *ngIf="column.key === 'name'" class="d-flex align-items-center gap-2">
+                <img 
+                  *ngIf="row.avatar"
+                  [src]="row.avatar" 
+                  [alt]="getCellValue(row, column)"
+                  class="rounded-circle"
+                  width="28"
+                  height="28">
+                <span class="fw-semibold small">{{ getCellValue(row, column) }}</span>
+              </div>
+              
+              <!-- Date -->
+              <span *ngIf="column.key === 'joinDate'" class="text-muted small">
+                {{ getCellValue(row, column) }}
+              </span>
+              
+              <!-- Course (with word wrap) -->
+              <span *ngIf="column.key === 'course'" 
+                    class="d-block small"
+                    style="line-height: 1.3; word-wrap: break-word; white-space: normal; max-width: 150px;">
+                {{ getCellValue(row, column) }}
+              </span>
+              
+              <!-- Phone -->
+              <span *ngIf="column.key === 'phone'" class="text-muted small">
+                {{ getCellValue(row, column) }}
+              </span>
+              
+              <!-- Gender -->
+              <span *ngIf="column.key === 'gender'" class="small">
+                {{ getCellValue(row, column) }}
+              </span>
+              
+              <!-- Default fallback -->
+              <span *ngIf="!['id', 'status', 'name', 'joinDate', 'course', 'phone', 'gender'].includes(column.key)">
+                {{ getCellValue(row, column) }}
+              </span>
+            </ng-container>
+          </td>
+        </ng-container>
+
+        <td *ngIf="actions.length > 0" class="px-4 text-center actions-cell">
+          <div class="dropdown">
+            <button 
+              class="btn btn-sm btn-link text-muted p-0" 
+              data-bs-toggle="dropdown"
+              (click)="$event.stopPropagation()">
+              <i class="bi bi-three-dots-vertical fs-5"></i>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end">
+              <li *ngFor="let action of actions">
+                <a 
+                  class="dropdown-item" 
+                  [class]="action.class"
+                  href="javascript:void(0)"
+                  (click)="onActionClick(action, row, $event)">
+                  <i *ngIf="action.icon" [class]="action.icon + ' me-2'"></i>
+                  {{ action.label }}
+                </a>
+              </li>
+            </ul>
+          </div>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+
+  <!-- Pagination Footer -->
+  <div class="table-footer">
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+      <p class="mb-0 text-muted pagination-info">
+        عرض <span class="fw-bold">{{ displayStart }}</span> الى <span class="fw-bold">{{ displayEnd }}</span> من <span class="fw-bold">{{ displayTotal }}</span> طلب
+      </p>
+      <nav>
+        <ul class="pagination pagination-custom mb-0">
+          <li class="page-item" [class.disabled]="currentPage === totalPages">
+            <a class="page-link" (click)="goToPage(currentPage + 1)">
+              <i class="bi bi-chevron-left"></i>
+            </a>
+          </li>
+          <li 
+            *ngFor="let page of pageNumbers" 
+            class="page-item"
+            [class.active]="page === currentPage">
+            <a class="page-link" (click)="goToPage(page)">{{ page }}</a>
+          </li>
+          <li class="page-item" [class.disabled]="currentPage === 1">
+            <a class="page-link" (click)="goToPage(currentPage - 1)">
+              <i class="bi bi-chevron-right"></i>
+            </a>
+          </li>
+        </ul>
+      </nav>
+    </div>
+  </div>
+</div>
