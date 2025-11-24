@@ -3,7 +3,7 @@ import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AllApiService } from '../../../core/services/all-api.service';
-import { InstructorResponse, LectureDTO, ModuleDTO } from '../../../core/interfaces/courses';
+import { CourseResponse, InstructorResponse, LectureDTO, ModuleDTO } from '../../../core/interfaces/courses';
 import Swal from 'sweetalert2';
 
 interface Module {
@@ -18,6 +18,7 @@ interface Lecture {
   id?: string;
   title: string;
   scheduledAt: string;
+  duration: string;
 }
 
 @Component({
@@ -28,33 +29,14 @@ interface Lecture {
   styleUrl: './create-course.component.scss'
 })
 export class CreateCourseComponent implements OnInit {
+  isSaving: boolean = false;
   isEditMode: boolean = false;
   courseId: string | null = null;
-  isLoading: boolean = false;
-  isSaving: boolean = false;
-  showEditModal: boolean = false;
-
   instructors: InstructorResponse[] = [];
   selectedImageFile: File | null = null;
   imagePreview: string | null = null;
 
-  // بيانات الكورس للعرض فقط (disabled)
-  courseData = {
-    title: '',
-    description: '',
-    startDate: '',
-    endDate: '',
-    price: '',
-    typeStatus: 'Active',
-    instructorId: '',
-    instructorName: '',
-    imageUrl: '',
-    contentType: '',
-    courseDetails: ''
-  };
-
-  // بيانات الكورس للتعديل في الـ Modal
-  editForm = {
+  courseForm = {
     title: '',
     description: '',
     startDate: '',
@@ -75,16 +57,17 @@ export class CreateCourseComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.loadInstructors();
-    
     this.route.params.subscribe(params => {
       if (params['id']) {
         this.isEditMode = true;
         this.courseId = params['id'];
-        this.loadCourse(params['id']);
-        this.loadModules(params['id']);
+        // التحقق من أن courseId ليس null قبل الاستخدام
+        if (this.courseId) {
+          this.loadCourseData(this.courseId);
+        }
       }
     });
+    this.loadInstructors();
   }
 
   loadInstructors(): void {
@@ -98,32 +81,38 @@ export class CreateCourseComponent implements OnInit {
     });
   }
 
-  loadCourse(id: string): void {
-    this.isLoading = true;
-    this.apiService.getCourseById(id).subscribe({
-      next: (course: any) => {
-        const instructor = this.instructors.find(i => i.id === course.instructorId);
-        const instructorName = instructor ? `${instructor.firstName} ${instructor.lastName}` : '-';
+  loadCourseData(courseId: string): void {
+    Swal.fire({
+      title: 'جاري التحميل...',
+      html: 'يرجى الانتظار',
+      allowOutsideClick: false,
+      allowEscapeKey: false,
+      didOpen: () => {
+        Swal.showLoading();
+      }
+    });
 
-        this.courseData = {
+    this.apiService.getCourseById(courseId).subscribe({
+      next: (course: CourseResponse) => {
+        console.log('Course Data:', course);
+        
+        this.courseForm = {
           title: course.title || '',
           description: course.description || '',
-          startDate: this.convertISOToInputDate(course.startDate),
-          endDate: this.convertISOToInputDate(course.endDate),
-          price: course.price ? course.price.toString() : '',
+          startDate: this.formatDateForInput(course.startDate),
+          endDate: this.formatDateForInput(course.endDate),
+          price: course.price?.toString() || '',
           typeStatus: course.typeStatus || 'Active',
           instructorId: course.instructorId || '',
-          instructorName: instructorName,
-          imageUrl: course.imageUrl || '',
           contentType: course.contentType || '',
-          courseDetails: course.courseDetails || ''
+          courseDetails: ''
         };
-        
+
         if (course.imageUrl) {
           this.imagePreview = course.imageUrl;
         }
-        
-        this.isLoading = false;
+
+        this.loadModulesAndLectures(courseId);
       },
       error: (error) => {
         console.error('Error loading course:', error);
@@ -131,71 +120,65 @@ export class CreateCourseComponent implements OnInit {
           icon: 'error',
           title: 'خطأ',
           text: 'حدث خطأ في تحميل بيانات الدورة',
-          confirmButtonText: 'حسناً',
           confirmButtonColor: '#ef4444'
+        }).then(() => {
+          this.router.navigate(['/courses']);
         });
-        this.isLoading = false;
       }
     });
   }
 
-  loadModules(courseId: string): void {
+  loadModulesAndLectures(courseId: string): void {
     this.apiService.getModulesByCourse(courseId).subscribe({
       next: (modules) => {
-        // التحقق من أن modules مصفوفة
-        if (!Array.isArray(modules)) {
-          console.error('Modules response is not an array:', modules);
-          this.modules = [];
-          return;
-        }
-
-        this.modules = modules.map(m => ({
-          id: m.id,
-          title: m.title,
-          description: m.description,
-          lectures: [],
-          isExpanded: false
-        }));
+        console.log('Modules Data:', modules);
         
-        // تحميل المحاضرات لكل module
-        this.modules.forEach(module => {
-          if (module.id) {
-            this.loadLectures(module.id, module);
-          }
+        const modulePromises = modules.map(module => 
+          new Promise<Module>((resolve) => {
+            this.apiService.getLecturesByModule(module.id).subscribe({
+              next: (lectures) => {
+                console.log(`Lectures for Module ${module.id}:`, lectures);
+                
+                resolve({
+                  id: module.id,
+                  title: module.title,
+                  description: module.description,
+                  lectures: lectures.map(lecture => ({
+                    id: lecture.id,
+                    title: lecture.title,
+                    scheduledAt: this.formatDateForInput(lecture.scheduledAt),
+                    duration: '0'
+                  })),
+                  isExpanded: false
+                });
+              },
+              error: () => {
+                resolve({
+                  id: module.id,
+                  title: module.title,
+                  description: module.description,
+                  lectures: [],
+                  isExpanded: false
+                });
+              }
+            });
+          })
+        );
+
+        Promise.all(modulePromises).then(loadedModules => {
+          this.modules = loadedModules;
+          console.log('Final Modules with Lectures:', this.modules);
+          Swal.close();
         });
       },
       error: (error) => {
         console.error('Error loading modules:', error);
-        this.modules = [];
+        Swal.close();
       }
     });
   }
 
-  loadLectures(moduleId: string, module: Module): void {
-    this.apiService.getLecturesByModule(moduleId).subscribe({
-      next: (lectures) => {
-        // التحقق من أن lectures مصفوفة
-        if (!Array.isArray(lectures)) {
-          console.error('Lectures response is not an array:', lectures);
-          module.lectures = [];
-          return;
-        }
-
-        module.lectures = lectures.map(l => ({
-          id: l.id,
-          title: l.title,
-          scheduledAt: this.convertISOToInputDate(l.scheduledAt)
-        }));
-      },
-      error: (error) => {
-        console.error('Error loading lectures:', error);
-        module.lectures = [];
-      }
-    });
-  }
-
-  private convertISOToInputDate(isoDate: string): string {
-    if (!isoDate) return '';
+  formatDateForInput(isoDate: string): string {
     try {
       const date = new Date(isoDate);
       const year = date.getFullYear();
@@ -203,34 +186,8 @@ export class CreateCourseComponent implements OnInit {
       const day = String(date.getDate()).padStart(2, '0');
       return `${year}-${month}-${day}`;
     } catch (error) {
-      console.error('Error converting date:', error);
       return '';
     }
-  }
-
-  // ==================== EDIT MODAL ====================
-
-  openEditCourseModal(): void {
-    this.showEditModal = true;
-    this.selectedImageFile = null;
-    
-    // نسخ البيانات من courseData إلى editForm
-    this.editForm = {
-      title: this.courseData.title,
-      description: this.courseData.description,
-      startDate: this.courseData.startDate,
-      endDate: this.courseData.endDate,
-      price: this.courseData.price,
-      typeStatus: this.courseData.typeStatus,
-      instructorId: this.courseData.instructorId,
-      contentType: this.courseData.contentType,
-      courseDetails: this.courseData.courseDetails
-    };
-  }
-
-  closeEditModal(): void {
-    this.showEditModal = false;
-    this.selectedImageFile = null;
   }
 
   onImageSelected(event: Event): void {
@@ -251,85 +208,17 @@ export class CreateCourseComponent implements OnInit {
     this.imagePreview = null;
   }
 
-  isEditFormValid(): boolean {
+  isCourseFormValid(): boolean {
     return !!(
-      this.editForm.title?.trim() &&
-      this.editForm.description?.trim() &&
-      this.editForm.startDate &&
-      this.editForm.endDate &&
-      this.editForm.price &&
-      this.editForm.instructorId &&
-      this.editForm.contentType?.trim()
+      this.courseForm.title?.trim() &&
+      this.courseForm.description?.trim() &&
+      this.courseForm.startDate &&
+      this.courseForm.endDate &&
+      this.courseForm.price &&
+      this.courseForm.instructorId &&
+      this.courseForm.contentType?.trim()
     );
   }
-
-  saveBasicCourseData(): void {
-    if (!this.isEditFormValid()) {
-      Swal.fire({
-        icon: 'warning',
-        title: 'تنبيه',
-        text: 'يرجى ملء جميع الحقول المطلوبة',
-        confirmButtonText: 'حسناً',
-        confirmButtonColor: '#4F46E5'
-      });
-      return;
-    }
-
-    this.isSaving = true;
-
-    const updateData: any = {
-      id: this.courseId,
-      title: this.editForm.title,
-      description: this.editForm.description,
-      startDate: new Date(this.editForm.startDate).toISOString(),
-      endDate: new Date(this.editForm.endDate).toISOString(),
-      price: parseFloat(this.editForm.price),
-      typeStatus: this.editForm.typeStatus,
-      instructorId: this.editForm.instructorId,
-      contentType: this.editForm.contentType,
-      courseDetails: this.editForm.courseDetails
-    };
-
-    this.apiService.updateCourse(this.courseId!, updateData).subscribe({
-      next: () => {
-        this.isSaving = false;
-        this.closeEditModal();
-        
-        Swal.fire({
-          icon: 'success',
-          title: 'تم التحديث! ✅',
-          text: 'تم تحديث بيانات الدورة بنجاح',
-          confirmButtonText: 'حسناً',
-          confirmButtonColor: '#10b981',
-          timer: 2000,
-          showConfirmButton: false
-        });
-        
-        // إعادة تحميل بيانات الدورة
-        this.loadCourse(this.courseId!);
-      },
-      error: (error) => {
-        console.error('❌ Error updating course:', error);
-        
-        let errorMessage = 'حدث خطأ في تحديث الدورة';
-        if (error.error?.message) {
-          errorMessage = error.error.message;
-        }
-        
-        Swal.fire({
-          icon: 'error',
-          title: 'خطأ',
-          text: errorMessage,
-          confirmButtonText: 'حسناً',
-          confirmButtonColor: '#ef4444'
-        });
-        
-        this.isSaving = false;
-      }
-    });
-  }
-
-  // ==================== MODULES METHODS ====================
 
   addModule(): void {
     this.modules.push({
@@ -353,8 +242,7 @@ export class CreateCourseComponent implements OnInit {
     }).then((result) => {
       if (result.isConfirmed) {
         const module = this.modules[index];
-        
-        if (module.id) {
+        if (module.id && this.isEditMode) {
           this.apiService.deleteModule(module.id).subscribe({
             next: () => {
               this.modules.splice(index, 1);
@@ -362,17 +250,16 @@ export class CreateCourseComponent implements OnInit {
                 icon: 'success',
                 title: 'تم الحذف',
                 text: 'تم حذف المحتوى بنجاح',
-                timer: 1500,
+                confirmButtonColor: '#10b981',
+                timer: 2000,
                 showConfirmButton: false
               });
             },
-            error: (error) => {
-              console.error('Error deleting module:', error);
+            error: () => {
               Swal.fire({
                 icon: 'error',
                 title: 'خطأ',
                 text: 'حدث خطأ في حذف المحتوى',
-                confirmButtonText: 'حسناً',
                 confirmButtonColor: '#ef4444'
               });
             }
@@ -391,7 +278,8 @@ export class CreateCourseComponent implements OnInit {
   addLecture(moduleIndex: number): void {
     this.modules[moduleIndex].lectures.push({
       title: '',
-      scheduledAt: ''
+      scheduledAt: '',
+      duration: ''
     });
   }
 
@@ -408,8 +296,7 @@ export class CreateCourseComponent implements OnInit {
     }).then((result) => {
       if (result.isConfirmed) {
         const lecture = this.modules[moduleIndex].lectures[lectureIndex];
-        
-        if (lecture.id) {
+        if (lecture.id && this.isEditMode) {
           this.apiService.deleteLecture(lecture.id).subscribe({
             next: () => {
               this.modules[moduleIndex].lectures.splice(lectureIndex, 1);
@@ -417,17 +304,16 @@ export class CreateCourseComponent implements OnInit {
                 icon: 'success',
                 title: 'تم الحذف',
                 text: 'تم حذف المحاضرة بنجاح',
-                timer: 1500,
+                confirmButtonColor: '#10b981',
+                timer: 2000,
                 showConfirmButton: false
               });
             },
-            error: (error) => {
-              console.error('Error deleting lecture:', error);
+            error: () => {
               Swal.fire({
                 icon: 'error',
                 title: 'خطأ',
                 text: 'حدث خطأ في حذف المحاضرة',
-                confirmButtonText: 'حسناً',
                 confirmButtonColor: '#ef4444'
               });
             }
@@ -439,21 +325,60 @@ export class CreateCourseComponent implements OnInit {
     });
   }
 
-  // ==================== SAVE MODULES & LECTURES ====================
-
-  async saveModulesAndLectures(): Promise<void> {
-    if (!this.courseId) {
+  async saveCompleteData(): Promise<void> {
+    if (!this.isCourseFormValid()) {
       Swal.fire({
-        icon: 'error',
-        title: 'خطأ',
-        text: 'معرف الدورة غير موجود',
+        icon: 'warning',
+        title: 'تنبيه',
+        text: 'يرجى ملء جميع حقول الدورة المطلوبة',
         confirmButtonText: 'حسناً',
-        confirmButtonColor: '#ef4444'
+        confirmButtonColor: '#4F46E5'
       });
       return;
     }
 
-    // التحقق من وجود محتويات للحفظ
+    this.isSaving = true;
+
+    Swal.fire({
+      title: this.isEditMode ? 'جاري التحديث...' : 'جاري الحفظ...',
+      html: 'يرجى الانتظار',
+      allowOutsideClick: false,
+      allowEscapeKey: false,
+      didOpen: () => {
+        Swal.showLoading();
+      }
+    });
+
+    try {
+      if (this.isEditMode && this.courseId) {
+        await this.updateCourse();
+      } else {
+        await this.createNewCourse();
+      }
+    } catch (error: any) {
+      console.error('Error saving course:', error);
+      
+      let errorMessage = 'حدث خطأ في حفظ الدورة';
+      if (error.error?.errors) {
+        const errors = Object.values(error.error.errors).flat();
+        errorMessage = errors.join('\n');
+      } else if (error.error?.message) {
+        errorMessage = error.error.message;
+      }
+      
+      Swal.fire({
+        icon: 'error',
+        title: 'خطأ',
+        text: errorMessage,
+        confirmButtonText: 'حسناً',
+        confirmButtonColor: '#ef4444'
+      });
+      
+      this.isSaving = false;
+    }
+  }
+
+  async createNewCourse(): Promise<void> {
     const validModules = this.modules.filter(m => m.title?.trim() && m.description?.trim());
     if (validModules.length === 0) {
       Swal.fire({
@@ -463,135 +388,156 @@ export class CreateCourseComponent implements OnInit {
         confirmButtonText: 'حسناً',
         confirmButtonColor: '#f59e0b'
       });
+      this.isSaving = false;
       return;
     }
 
-    this.isSaving = true;
-
-    try {
-      await this.saveAllModulesAndLectures(this.courseId);
-      
-      this.isSaving = false;
-      Swal.fire({
-        icon: 'success',
-        title: 'تم الحفظ! 🎉',
-        html: `
-          <p>تم حفظ المحتويات بنجاح:</p>
-          <ul style="text-align: right; list-style: none; padding: 0;">
-            <li>✅ ${validModules.length} محتوى</li>
-            <li>✅ ${this.getTotalLectures()} محاضرة</li>
-          </ul>
-        `,
-        confirmButtonText: 'حسناً',
-        confirmButtonColor: '#10b981',
-        timer: 3000
-      }).then(() => {
-        this.router.navigate(['/courses']);
-      });
-      
-    } catch (error: any) {
-      console.error('❌ Error saving modules/lectures:', error);
-      Swal.fire({
-        icon: 'error',
-        title: 'خطأ',
-        text: error.message || 'حدث خطأ في حفظ المحتويات',
-        confirmButtonText: 'حسناً',
-        confirmButtonColor: '#ef4444'
-      });
-      this.isSaving = false;
+    const formData = new FormData();
+    formData.append('Title', this.courseForm.title.trim());
+    formData.append('Description', this.courseForm.description.trim());
+    formData.append('TypeStatus', this.courseForm.typeStatus);
+    formData.append('StartDate', new Date(this.courseForm.startDate).toISOString());
+    formData.append('EndDate', new Date(this.courseForm.endDate).toISOString());
+    formData.append('Price', this.courseForm.price);
+    formData.append('InstructorId', this.courseForm.instructorId);
+    formData.append('ContentType', this.courseForm.contentType.trim());
+    formData.append('CourseDetails', this.courseForm.courseDetails || '');
+    
+    if (this.selectedImageFile) {
+      formData.append('ImageFile', this.selectedImageFile, this.selectedImageFile.name);
     }
-  }
 
-  private async saveAllModulesAndLectures(courseId: string): Promise<void> {
-    const validModules = this.modules.filter(m => m.title?.trim() && m.description?.trim());
-    console.log(`\n📚 Saving ${validModules.length} modules...`);
-    
-    let savedModules = 0;
-    let savedLectures = 0;
-    
-    for (let i = 0; i < this.modules.length; i++) {
-      const module = this.modules[i];
-      
-      if (!module.title?.trim() || !module.description?.trim()) {
-        console.warn(`⚠️ Skipping module ${i + 1} - missing title or description`);
-        continue;
-      }
-
-      try {
-        let moduleId: string;
-        
-        const moduleData: ModuleDTO = {
-          title: module.title.trim(),
-          description: module.description.trim(),
-          courseId: courseId
-        };
-
-        if (module.id) {
-          // تحديث module موجود
-          moduleData.id = module.id;
-          const updatedModule = await this.apiService.updateModule(module.id, moduleData).toPromise();
-          moduleId = updatedModule!.id;
-          console.log(`✅ Updated module: ${module.title}`);
-        } else {
-          // إنشاء module جديد
-          const createdModule = await this.apiService.createModule(moduleData).toPromise();
-          moduleId = createdModule!.id;
-          console.log(`✅ Created module: ${module.title}`);
-        }
-
-        savedModules++;
-
-        // حفظ المحاضرات للـ module
-        if (module.lectures && module.lectures.length > 0) {
-          const lectureCount = await this.saveModuleLectures(moduleId, courseId, module.lectures);
-          savedLectures += lectureCount;
-        }
-        
-      } catch (error: any) {
-        console.error(`❌ Error saving module ${i + 1}:`, error);
-        throw new Error(`فشل حفظ المحتوى "${module.title}": ${error.error?.message || error.message}`);
-      }
-    }
-    
-    console.log(`✅ Total saved: ${savedModules} modules, ${savedLectures} lectures`);
-  }
-
-  private async saveModuleLectures(moduleId: string, courseId: string, lectures: Lecture[]): Promise<number> {
-    let savedCount = 0;
-    
-    for (const lecture of lectures) {
-      if (!lecture.title?.trim() || !lecture.scheduledAt) {
-        console.warn(`⚠️ Skipping lecture - missing title or date`);
-        continue;
-      }
-
-      try {
-        const lectureData: LectureDTO = {
+    const modulesData = validModules.map(module => ({
+      title: module.title.trim(),
+      description: module.description.trim(),
+      lectures: module.lectures
+        .filter(l => l.title?.trim() && l.scheduledAt)
+        .map(lecture => ({
           title: lecture.title.trim(),
           scheduledAt: new Date(lecture.scheduledAt).toISOString(),
-          moduleId: moduleId,
-          courseId: courseId
-        };
+          duration: lecture.duration || '0'
+        }))
+    }));
 
-        if (lecture.id) {
-          // تحديث lecture موجودة
-          lectureData.id = lecture.id;
-          await this.apiService.updateLecture(lecture.id, lectureData).toPromise();
-          console.log(`  ✅ Updated lecture: ${lecture.title}`);
+    formData.append('Modules', JSON.stringify(modulesData));
+
+    const response = await this.apiService.createCourseWithContent(formData).toPromise();
+    console.log('Create Course Response:', response);
+
+    this.isSaving = false;
+    
+    Swal.fire({
+      icon: 'success',
+      title: 'تم الحفظ! 🎉',
+      html: `
+        <p>تم إنشاء الدورة بنجاح مع:</p>
+        <ul style="text-align: right; list-style: none; padding: 0;">
+          <li>✅ ${validModules.length} محتوى</li>
+          <li>✅ ${this.getTotalLectures()} محاضرة</li>
+        </ul>
+      `,
+      confirmButtonText: 'حسناً',
+      confirmButtonColor: '#10b981',
+      timer: 3000
+    }).then(() => {
+      this.router.navigate(['/courses']);
+    });
+  }
+
+  async updateCourse(): Promise<void> {
+    if (!this.courseId) return;
+
+    const courseUpdateData = {
+      id: this.courseId,
+      title: this.courseForm.title.trim(),
+      description: this.courseForm.description.trim(),
+      startDate: new Date(this.courseForm.startDate).toISOString(),
+      endDate: new Date(this.courseForm.endDate).toISOString(),
+      price: parseFloat(this.courseForm.price),
+      typeStatus: this.courseForm.typeStatus,
+      instructorId: this.courseForm.instructorId,
+      imageUrl: this.imagePreview || '',
+      contentType: this.courseForm.contentType.trim(),
+      courseDetails: this.courseForm.courseDetails || ''
+    };
+
+    const response = await this.apiService.updateCourse(this.courseId, courseUpdateData).toPromise();
+    console.log('Update Course Response:', response);
+
+    for (const module of this.modules) {
+      if (module.title?.trim() && module.description?.trim()) {
+        if (module.id) {
+          const moduleUpdateData = {
+            title: module.title.trim(),
+            description: module.description.trim(),
+            courseId: this.courseId
+          };
+          const moduleResponse = await this.apiService.updateModule(module.id, moduleUpdateData).toPromise();
+          console.log('Update Module Response:', moduleResponse);
+
+          for (const lecture of module.lectures) {
+            if (lecture.title?.trim() && lecture.scheduledAt) {
+              if (lecture.id) {
+                const lectureUpdateData = {
+                  title: lecture.title.trim(),
+                  scheduledAt: new Date(lecture.scheduledAt).toISOString(),
+                  moduleId: module.id,
+                  courseId: this.courseId
+                };
+                const lectureResponse = await this.apiService.updateLecture(lecture.id, lectureUpdateData).toPromise();
+                console.log('Update Lecture Response:', lectureResponse);
+              } else {
+                const lectureCreateData = {
+                  title: lecture.title.trim(),
+                  scheduledAt: new Date(lecture.scheduledAt).toISOString(),
+                  moduleId: module.id,
+                  courseId: this.courseId
+                };
+                const lectureResponse = await this.apiService.createLecture(lectureCreateData).toPromise();
+                console.log('Create Lecture Response:', lectureResponse);
+              }
+            }
+          }
         } else {
-          // إنشاء lecture جديدة
-          await this.apiService.createLecture(lectureData).toPromise();
-          console.log(`  ✅ Created lecture: ${lecture.title}`);
+          const moduleCreateData = {
+            title: module.title.trim(),
+            description: module.description.trim(),
+            courseId: this.courseId
+          };
+          const moduleResponse = await this.apiService.createModule(moduleCreateData).toPromise();
+          console.log('Create Module Response:', moduleResponse);
+
+          // التحقق من أن moduleResponse ليس undefined وأن له id
+          if (moduleResponse && moduleResponse.id) {
+            for (const lecture of module.lectures) {
+              if (lecture.title?.trim() && lecture.scheduledAt) {
+                const lectureCreateData = {
+                  title: lecture.title.trim(),
+                  scheduledAt: new Date(lecture.scheduledAt).toISOString(),
+                  moduleId: moduleResponse.id,
+                  courseId: this.courseId
+                };
+                const lectureResponse = await this.apiService.createLecture(lectureCreateData).toPromise();
+                console.log('Create Lecture Response:', lectureResponse);
+              }
+            }
+          }
         }
-        
-        savedCount++;
-      } catch (error: any) {
-        console.error(`  ❌ Error saving lecture:`, error);
-        throw new Error(`فشل حفظ المحاضرة "${lecture.title}": ${error.error?.message || error.message}`);
       }
     }
+
+    this.isSaving = false;
     
-    return savedCount;
+    Swal.fire({
+      icon: 'success',
+      title: 'تم التحديث! 🎉',
+      text: 'تم تحديث الدورة بنجاح',
+      confirmButtonText: 'حسناً',
+      confirmButtonColor: '#10b981',
+      timer: 3000
+    }).then(() => {
+      this.router.navigate(['/courses']);
+    });
   }
 
   private getTotalLectures(): number {

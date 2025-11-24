@@ -31,7 +31,7 @@ export class SidebarComponent {
     { id: 'exams-management', icon: 'bi-calendar-check', label: 'إدارة الاختبارات', route: '/tests' },
    
     { id: 'questions', icon: 'bi-patch-question', label: 'قائمة الأسئلة', route: '/questions' },
-    { id: 'answers', icon: 'bi-check-circle', label: 'قائمة الإجابات', route: '/answers' }
+    // { id: 'answers', icon: 'bi-check-circle', label: 'قائمة الإجابات', route: '/answers' }
   ];
 
   bottomMenuItems: MenuItem[] = [

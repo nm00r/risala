@@ -12,12 +12,10 @@ import { authGuard } from './core/services/auth.guard';
 import { LoginComponent } from './component/login/login.component';
 
 export const routes: Routes = [
-  // صفحة تسجيل الدخول (بدون حماية)
   { 
     path: 'login', 
     component: LoginComponent 
   },
-  
   { 
     path: '', 
     component: DashboardPageComponent,
@@ -34,8 +32,7 @@ export const routes: Routes = [
     canActivate: [authGuard]
   },
   {
-   
-    path: 'courses/add-content/:id',
+    path: 'courses/create',
     component: CreateCourseComponent,
     canActivate: [authGuard]
   },
@@ -84,7 +81,6 @@ export const routes: Routes = [
     component: AnswerComponent,
     canActivate: [authGuard]
   },
-  
   {
     path: '**',
     redirectTo: '/login'

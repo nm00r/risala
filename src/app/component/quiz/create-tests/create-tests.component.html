@@ -1,6 +1,5 @@
 <div class="create-test-page">
   
-  <!-- Header -->
   <div class="page-header mb-4">
     <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
       <div>
@@ -13,7 +12,6 @@
           <i class="bi bi-x-lg me-2"></i>
           إلغاء
         </button>
-        <!-- زر حفظ فقط (بدون نشر) -->
         <button 
           class="btn btn-outline-primary" 
           (click)="saveExam(false)"
@@ -27,7 +25,6 @@
             جاري الحفظ...
           </span>
         </button>
-        <!-- زر حفظ ونشر -->
         <button 
           class="btn btn-primary" 
           (click)="saveExam(true)"
@@ -45,13 +42,11 @@
     </div>
   </div>
 
-  <!-- معلومات الاختبار -->
   <div class="card border-0 shadow-sm mb-4">
     <div class="card-body p-4">
       <h5 class="fw-bold mb-4 text-end">معلومات الاختبار</h5>
       <form>
         <div class="row g-3">
-          <!-- عنوان الاختبار -->
           <div class="col-md-6">
             <label class="form-label text-end d-block">
               عنوان الاختبار
@@ -64,13 +59,12 @@
               placeholder="اختبار الفترة الأولى">
           </div>
 
-          <!-- الدورة المرتبطة -->
           <div class="col-md-6">
             <label class="form-label text-end d-block">
               الدورة المرتبطة
             </label>
             <select 
-              class="form-select text-end" 
+              class="form-select dropdown-rtl-test text-end" 
               [(ngModel)]="examForm.courseId"
               name="courseId">
               <option value="">اختر الدورة</option>
@@ -80,7 +74,6 @@
             </select>
           </div>
 
-          <!-- مدة الاختبار -->
           <div class="col-md-6">
             <label class="form-label text-end d-block">
               مدة الاختبار (بالدقائق)
@@ -94,7 +87,6 @@
               min="1">
           </div>
 
-          <!-- درجة النجاح -->
           <div class="col-md-6">
             <label class="form-label text-end d-block">
               درجة النجاح %
@@ -109,7 +101,6 @@
               max="100">
           </div>
 
-          <!-- تاريخ البداية -->
           <div class="col-md-6">
             <label class="form-label text-end d-block">
               وقت البداية (التاريخ)
@@ -121,7 +112,6 @@
               name="startDate">
           </div>
 
-          <!-- تاريخ النهاية -->
           <div class="col-md-6">
             <label class="form-label text-end d-block">
               وقت النهاية (التاريخ)
@@ -137,7 +127,6 @@
     </div>
   </div>
 
-  <!-- الأسئلة -->
   <div class="card border-0 shadow-sm mb-4">
     <div class="card-body p-4">
       <div class="d-flex justify-content-between align-items-center mb-4">
@@ -148,7 +137,6 @@
         <h5 class="fw-bold mb-0">الأسئلة</h5>
       </div>
 
-      <!-- شريط البحث -->
       <div class="search-filter-bar mb-4">
         <div class="input-group">
           <input 
@@ -162,7 +150,6 @@
         </div>
       </div>
 
-      <!-- رسالة التحميل -->
       <div *ngIf="isLoadingQuestions" class="text-center py-4">
         <div class="spinner-border text-primary" role="status">
           <span class="visually-hidden">جاري التحميل...</span>
@@ -170,26 +157,22 @@
         <p class="text-muted mt-2">جاري تحميل الأسئلة...</p>
       </div>
 
-      <!-- قائمة الأسئلة المتاحة للإضافة -->
       <div class="available-questions-section" *ngIf="!isLoadingQuestions && searchQuery">
         <h6 class="text-muted mb-3 text-end">نتائج البحث</h6>
         
         <div class="questions-search-results">
           <div class="search-question-card mb-3" *ngFor="let question of filteredQuestions">
             <div class="d-flex align-items-start gap-3">
-              <!-- محتوى السؤال -->
               <div class="question-content flex-grow-1 text-end">
                 <div class="question-text mb-2">
                   {{ question.text }}
                 </div>
 
-                <!-- صورة السؤال -->
                 <div class="question-image-small mb-2" *ngIf="question.imageUrl">
                   <img [src]="'https://nafzill-001-site1.ltempurl.com' + question.imageUrl" 
                        alt="صورة السؤال">
                 </div>
 
-                <!-- الإجابة الصحيحة -->
                 <div class="correct-answer-preview mt-2" *ngIf="question.answers && question.answers.length > 0">
                   <small class="text-muted">
                     <i class="bi bi-check-circle text-success me-1"></i>
@@ -197,7 +180,6 @@
                   </small>
                 </div>
 
-                <!-- النقاط -->
                 <div class="question-points mt-2">
                   <span class="badge bg-light text-dark">
                     <i class="bi bi-star me-1"></i>
@@ -206,7 +188,6 @@
                 </div>
               </div>
 
-              <!-- زر إضافة -->
               <button 
                 class="btn btn-add-question"
                 (click)="addQuestionToExam(question)"
@@ -218,7 +199,6 @@
             </div>
           </div>
 
-          <!-- رسالة في حالة عدم وجود نتائج -->
           <div *ngIf="filteredQuestions.length === 0" class="text-center py-4">
             <i class="bi bi-search" style="font-size: 2.5rem; color: #cbd5e0;"></i>
             <p class="text-muted mt-3">لا توجد نتائج للبحث "{{ searchQuery }}"</p>
@@ -226,25 +206,22 @@
         </div>
       </div>
 
-      <!-- رسالة عند عدم البحث -->
       <div *ngIf="!isLoadingQuestions && !searchQuery" class="text-center py-5">
         <i class="bi bi-search" style="font-size: 3rem; color: #e2e8f0;"></i>
         <p class="text-muted mt-3">ابحث عن الأسئلة لإضافتها للاختبار</p>
       </div>
 
-      <!-- رسالة في حالة عدم وجود أسئلة في النظام -->
       <div *ngIf="!isLoadingQuestions && allQuestions.length === 0" class="text-center py-5">
         <i class="bi bi-inbox" style="font-size: 3rem; color: #cbd5e0;"></i>
         <p class="text-muted mt-3">لا توجد أسئلة متاحة حالياً</p>
-        <button class="btn btn-primary mt-2" (click)="navigateToAddQuestion()">
+        <!-- <button class="btn btn-primary mt-2" (click)="navigateToAddQuestion()">
           <i class="bi bi-plus-circle me-2"></i>
           أضف أول سؤال
-        </button>
+        </button> -->
       </div>
     </div>
   </div>
 
-  <!-- الأسئلة المحددة للاختبار -->
   <div class="card border-0 shadow-sm" *ngIf="selectedQuestions.length > 0">
     <div class="card-body p-4">
       <div class="d-flex justify-content-between align-items-center mb-4">
@@ -272,13 +249,11 @@
               {{ question.text }}
             </div>
 
-            <!-- صورة السؤال -->
             <div class="question-image mb-3" *ngIf="question.imageUrl">
               <img [src]="'https://nafzill-001-site1.ltempurl.com' + question.imageUrl" 
                    alt="صورة السؤال">
             </div>
 
-            <!-- الإجابات -->
             <div class="answers-section" *ngIf="question.answers && question.answers.length > 0">
               <div class="answer-item" *ngFor="let answer of question.answers; let j = index"
                    [class.correct-answer-item]="answer.isCorrect">
@@ -297,7 +272,6 @@
               </div>
             </div>
 
-            <!-- معلومات إضافية -->
             <div class="question-meta mt-3">
               <span class="badge bg-light text-dark">
                 <i class="bi bi-star me-1"></i>
@@ -310,7 +284,6 @@
     </div>
   </div>
 
-  <!-- رسالة تحذير عند عدم اختيار أسئلة -->
   <div class="alert alert-warning" *ngIf="selectedQuestions.length === 0 && !isLoadingQuestions">
     <i class="bi bi-exclamation-triangle me-2"></i>
     يرجى البحث عن الأسئلة وإضافة سؤال واحد على الأقل للاختبار

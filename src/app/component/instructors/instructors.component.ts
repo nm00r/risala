@@ -212,112 +212,47 @@ addInstructor(): void {
 
   if (!this.isEditMode) {
     const instructorData = this.mapLocalInstructorToApi(false);
-    
-    console.log('═══════════════════════════════════════');
-    console.log('📤 STEP 1: Sending POST Request');
-    console.log('═══════════════════════════════════════');
-    console.log('Data:', instructorData);
-    console.log('URL:', `${this.apiService['baseUrl']}/Instructors/create`);
+  
     
     this.apiService.createInstructor(instructorData).subscribe({
       next: (response) => {
-        console.log('═══════════════════════════════════════');
-        console.log('✅ STEP 2: POST Response Received');
-        console.log('═══════════════════════════════════════');
-        console.log('Response:', JSON.stringify(response, null, 2));
-        console.log('New Instructor ID:', response.id);
-        console.log('User ID:', response.userId);
-        
-        // ✅ إضافة فورية للجدول
+    
         const newInstructor = this.mapApiInstructorToLocal(response);
-        console.log('Mapped Instructor:', newInstructor);
+  
         
         this.instructors = [...this.instructors, newInstructor];
         this.updateStats();
         this.cdr.detectChanges();
-        
-        console.log('═══════════════════════════════════════');
-        console.log('📊 STEP 3: Current State After POST');
-        console.log('═══════════════════════════════════════');
-        console.log('Total Instructors in Memory:', this.instructors.length);
-        console.log('Instructors Array:', this.instructors.map(i => ({ id: i.id, name: i.name })));
-        
-        // ⏰ انتظر 2 ثانية ثم اعمل GET
-        console.log('═══════════════════════════════════════');
-        console.log('⏰ STEP 4: Waiting 2 seconds before GET...');
-        console.log('═══════════════════════════════════════');
+
         
         setTimeout(() => {
-          console.log('═══════════════════════════════════════');
-          console.log('🔄 STEP 5: Sending GET Request');
-          console.log('═══════════════════════════════════════');
-          
-          // احفظ العدد الحالي
+  
           const countBeforeGet = this.instructors.length;
           
           this.apiService.getAllInstructors().subscribe({
             next: (instructors) => {
-              console.log('═══════════════════════════════════════');
-              console.log('📥 STEP 6: GET Response Received');
-              console.log('═══════════════════════════════════════');
-              console.log('Total from Server:', instructors.length);
-              console.log('Total Before GET:', countBeforeGet);
-              console.log('Difference:', instructors.length - countBeforeGet);
-              
-              console.log('\nAll Instructors from Server:');
+           
               instructors.forEach((inst, index) => {
-                console.log(`${index + 1}. ID: ${inst.id}, Name: ${inst.firstName} ${inst.lastName}, Phone: ${inst.phoneNumber}`);
+               
               });
               
-              // 🔍 ابحث عن المعلم الجديد
               const foundNewInstructor = instructors.find(i => i.id === response.id);
-              
-              console.log('═══════════════════════════════════════');
-              console.log('🔍 STEP 7: Verification');
-              console.log('═══════════════════════════════════════');
+
               
               if (foundNewInstructor) {
-                console.log('✅ SUCCESS: New instructor FOUND in database!');
-                console.log('Found Instructor:', foundNewInstructor);
-                console.log('═══════════════════════════════════════');
-                console.log('🎉 DIAGNOSIS: Backend is WORKING CORRECTLY!');
-                console.log('Problem is: Frontend Cache or Change Detection');
-                console.log('═══════════════════════════════════════');
-              } else {
-                console.log('❌ FAILURE: New instructor NOT FOUND in database!');
-                console.log('Expected ID:', response.id);
-                console.log('Expected Name:', `${response.firstName} ${response.lastName}`);
-                console.log('Expected Phone:', response.phoneNumber);
-                console.log('═══════════════════════════════════════');
-                console.log('🚨 DIAGNOSIS: Backend PROBLEM!');
-                console.log('Backend returns success but does NOT save data!');
-                console.log('═══════════════════════════════════════');
                 
-                // تحقق من التوقيت
-                console.log('\n⏰ Timing Check:');
-                console.log('- If data appears after page refresh → Backend saves with delay');
-                console.log('- If data NEVER appears → Backend does not save at all');
-                console.log('- Action: Check backend logs and database');
+              } else {
+           
+                
               }
               
-              // تحديث القائمة على أي حال
               this.instructors = instructors.map(instructor => this.mapApiInstructorToLocal(instructor));
               this.updateStats();
               this.cdr.detectChanges();
-              
-              console.log('═══════════════════════════════════════');
-              console.log('📊 STEP 8: Final State');
-              console.log('═══════════════════════════════════════');
-              console.log('Total Instructors After Update:', this.instructors.length);
-              console.log('Stats:', this.stats);
+            
             },
             error: (error) => {
-              console.error('═══════════════════════════════════════');
-              console.error('❌ STEP 6: GET Request FAILED!');
-              console.error('═══════════════════════════════════════');
-              console.error('Error:', error);
-              console.error('Status:', error.status);
-              console.error('Message:', error.message);
+  
               
               if (error.status === 401) {
                 console.error('🚨 DIAGNOSIS: Authentication problem!');

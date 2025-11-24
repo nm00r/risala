@@ -6,7 +6,6 @@
   }
 }
 
-// Page Header
 .page-header {
   margin-bottom: 1.5rem;
   
@@ -16,7 +15,6 @@
   }
 }
 
-// Action Buttons
 .btn {
   padding: 0.625rem 1.25rem;
   font-weight: 600;
@@ -36,7 +34,6 @@
   color: white;
 }
 
-// Modal Styles
 .modal {
   &.show {
     display: block !important;
@@ -102,7 +99,6 @@
   }
 }
 
-// Form Styles
 .form-label {
   font-weight: 600;
   font-size: 0.875rem;
@@ -121,9 +117,10 @@
   padding: 0.625rem 0.875rem;
   font-size: 0.875rem;
   transition: all 0.2s ease;
+  direction: rtl;
   
   &:focus {
-    border-color: #4F46E5;
+    border-color: #145274E5;
     box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
   }
   
@@ -132,7 +129,21 @@
   }
 }
 
-// Responsive Adjustments
+.form-select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  
+  &.dropdown-select-rtl {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: left 0.75rem center;
+    background-size: 16px 12px;
+    padding-left: 2.5rem;
+    padding-right: 0.875rem;
+  }
+}
+
 @media (max-width: 1200px) {
   .page-header {
     h4 {

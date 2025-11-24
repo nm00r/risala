@@ -41,11 +41,10 @@ export interface ModuleResponse {
   courseId: string;
 }
 
-// Lecture Interfaces
 export interface LectureDTO {
   id?: string;
   title: string;
-  scheduledAt: string; // ISO string
+  scheduledAt: string; 
   moduleId: string;
   courseId: string;
 }

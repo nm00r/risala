@@ -26,7 +26,6 @@ export class AllApiService {
 
   constructor(private http: HttpClient) { }
 
-  // ==================== Helper Methods ====================
   private getAuthToken(): string | null {
     return localStorage.getItem('token');
   }
@@ -57,7 +56,6 @@ export class AllApiService {
     return throwError(() => error);
   }
 
-  // ==================== Students APIs ====================
   getAllStudents(): Observable<Student[]> {  
     const url = this.addCacheBuster(`${this.baseUrl}/Students`);
     return this.http.get<Student[]>(url, { headers: this.getAuthHeaders() })
@@ -88,7 +86,6 @@ export class AllApiService {
     }).pipe(catchError(this.handleError));
   }
 
-  // ==================== Courses APIs ====================
   getAllCourses(): Observable<CourseResponse[]> {
     const url = this.addCacheBuster(`${this.baseUrl}/Courses`);
     return this.http.get<CourseResponse[]>(url, { headers: this.getAuthHeaders() })
@@ -131,7 +128,18 @@ export class AllApiService {
       .pipe(catchError(this.handleError));
   }
 
-  // ==================== Modules APIs ====================
+  createCourseWithContent(formData: FormData): Observable<any> {
+    const token = this.getAuthToken();
+    let headers = new HttpHeaders();
+    
+    if (token) {
+      headers = headers.set('Authorization', `Bearer ${token}`);
+    }
+    
+    return this.http.post<any>(`${this.baseUrl}/Courses/create-with-content`, formData, { headers })
+      .pipe(catchError(this.handleError));
+  }
+
   getModuleById(id: string): Observable<ModuleResponse> {
     const url = this.addCacheBuster(`${this.baseUrl}/Modules/${id}`);
     return this.http.get<ModuleResponse>(url, { headers: this.getAuthHeaders() })
@@ -144,16 +152,38 @@ export class AllApiService {
       .pipe(catchError(this.handleError));
   }
 
-  createModule(module: ModuleDTO): Observable<ModuleResponse> {
-    return this.http.post<ModuleResponse>(`${this.baseUrl}/Modules`, module, { 
+  createModule(module: any): Observable<ModuleResponse> {
+    const cleanModule = {
+      title: module.title,
+      description: module.description,
+      courseId: module.courseId
+    };
+    
+    console.log('Creating module with data:', cleanModule);
+    
+    return this.http.post<ModuleResponse>(`${this.baseUrl}/Modules`, cleanModule, { 
       headers: this.getAuthHeaders() 
-    }).pipe(catchError(this.handleError));
+    }).pipe(catchError((error) => {
+      console.error('Create module error:', error);
+      return this.handleError(error);
+    }));
   }
 
-  updateModule(id: string, module: ModuleDTO): Observable<ModuleResponse> {
-    return this.http.put<ModuleResponse>(`${this.baseUrl}/Modules/${id}`, module, { 
+  updateModule(id: string, module: any): Observable<ModuleResponse> {
+    const cleanModule = {
+      title: module.title,
+      description: module.description,
+      courseId: module.courseId
+    };
+    
+    console.log('Updating module with data:', cleanModule);
+    
+    return this.http.put<ModuleResponse>(`${this.baseUrl}/Modules/${id}`, cleanModule, { 
       headers: this.getAuthHeaders() 
-    }).pipe(catchError(this.handleError));
+    }).pipe(catchError((error) => {
+      console.error('Update module error:', error);
+      return this.handleError(error);
+    }));
   }
 
   deleteModule(id: string): Observable<any> {
@@ -162,23 +192,58 @@ export class AllApiService {
     }).pipe(catchError(this.handleError));
   }
 
-  // ==================== Lectures APIs ====================
   getLecturesByModule(moduleId: string): Observable<LectureResponse[]> {
     const url = this.addCacheBuster(`${this.baseUrl}/Lectures/ByModule/${moduleId}`);
     return this.http.get<LectureResponse[]>(url, { headers: this.getAuthHeaders() })
       .pipe(catchError(this.handleError));
   }
 
-  createLecture(lecture: LectureDTO): Observable<LectureResponse> {
-    return this.http.post<LectureResponse>(`${this.baseUrl}/Lectures`, lecture, { 
+  createLecture(lecture: any): Observable<LectureResponse> {
+    const newId = this.generateUUID();
+    
+    const cleanLecture = {
+      id: newId,
+      title: lecture.title,
+      scheduledAt: lecture.scheduledAt,
+      moduleId: lecture.moduleId,
+      courseId: lecture.courseId
+    };
+    
+    console.log('Creating lecture with data:', cleanLecture);
+    
+    return this.http.post<LectureResponse>(`${this.baseUrl}/Lectures`, cleanLecture, { 
       headers: this.getAuthHeaders() 
-    }).pipe(catchError(this.handleError));
+    }).pipe(catchError((error) => {
+      console.error('Create lecture error:', error);
+      return this.handleError(error);
+    }));
   }
 
-  updateLecture(id: string, lecture: LectureDTO): Observable<LectureResponse> {
-    return this.http.put<LectureResponse>(`${this.baseUrl}/Lectures/${id}`, lecture, { 
+  private generateUUID(): string {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+      const r = Math.random() * 16 | 0;
+      const v = c === 'x' ? r : (r & 0x3 | 0x8);
+      return v.toString(16);
+    });
+  }
+
+  updateLecture(id: string, lecture: any): Observable<LectureResponse> {
+    const cleanLecture = {
+      id: id,
+      title: lecture.title,
+      scheduledAt: lecture.scheduledAt,
+      moduleId: lecture.moduleId,
+      courseId: lecture.courseId
+    };
+    
+    console.log('Updating lecture with data:', cleanLecture);
+    
+    return this.http.put<LectureResponse>(`${this.baseUrl}/Lectures/${id}`, cleanLecture, { 
       headers: this.getAuthHeaders() 
-    }).pipe(catchError(this.handleError));
+    }).pipe(catchError((error) => {
+      console.error('Update lecture error:', error);
+      return this.handleError(error);
+    }));
   }
 
   deleteLecture(id: string): Observable<any> {
@@ -187,7 +252,6 @@ export class AllApiService {
     }).pipe(catchError(this.handleError));
   }
 
-  // ==================== Questions APIs ====================
   getAllQuestions(): Observable<Question[]> {
     const url = this.addCacheBuster(`${this.baseUrl}/Questions`);
     return this.http.get<Question[]>(url, { headers: this.getAuthHeaders() })
@@ -222,7 +286,6 @@ export class AllApiService {
     }).pipe(catchError(this.handleError));
   }
 
-  // ==================== Answers APIs ====================
   getAllAnswers(): Observable<Answer[]> {
     const url = this.addCacheBuster(`${this.baseUrl}/Answers`);
     return this.http.get<Answer[]>(url, { headers: this.getAuthHeaders() })
@@ -259,7 +322,6 @@ export class AllApiService {
     }).pipe(catchError(this.handleError));
   }
 
-  // ==================== Exams APIs ====================
   getAllExams(): Observable<any[]> {
     const url = this.addCacheBuster(`${this.baseUrl}/Exams`);
     return this.http.get<any[]>(url, { headers: this.getAuthHeaders() })
@@ -314,7 +376,6 @@ export class AllApiService {
     }).pipe(catchError(this.handleError));
   }
   
-  // ==================== Instructors APIs ====================
   getAllInstructors(): Observable<InstructorResponse[]> {
     const url = this.addCacheBuster(`${this.baseUrl}/Instructors`);
     return this.http.get<InstructorResponse[]>(url, { 
@@ -351,7 +412,6 @@ export class AllApiService {
     }).pipe(catchError(this.handleError));
   }
 
-  // ==================== Enrollments APIs ====================
   createEnrollment(enrollment: any): Observable<any> {
     return this.http.post<any>(`${this.baseUrl}/Enrollments`, enrollment, { 
       headers: this.getAuthHeaders() 
